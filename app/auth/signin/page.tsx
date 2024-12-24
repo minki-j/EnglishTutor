@@ -27,7 +27,9 @@ export default function SignIn() {
           <div className="flex justify-center">
             <PenLine className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Welcome to WriteBetter</h1>
+          <h1 className="text-2xl font-bold">Welcome to 
+            EnglishTutor
+          </h1>
           <p className="text-muted-foreground">
             Sign in to start improving your English writing skills with AI-powered
             corrections and personalized quizzes.

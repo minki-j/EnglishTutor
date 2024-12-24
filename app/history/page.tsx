@@ -25,8 +25,7 @@ export default async function HistoryPage() {
   }));
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-6">Your Correction History</h1>
+    <div className="max-w-4xl mx-auto py-8">
       <div className="space-y-4">
         {formattedCorrections.map((correction) => (
           <CorrectionCard key={correction.id} entry={correction} />

@@ -18,8 +18,6 @@ interface WritingEntry {
 }
 
 export function WritingSection() {
-  // const { data: session } = useSession();
-  // console.log("======= session =======\n", session);
   const [entries, setEntries] = useState<WritingEntry[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +90,7 @@ export function WritingSection() {
           disabled={isLoading}
         />
         <Button onClick={correctWriting} disabled={isLoading} className="w-full">
-          {isLoading ? "Checking..." : "Check My Writing"}
+          {isLoading ? "Checking..." : "Correct My Writing (Cmd+Enter)"}
         </Button>
       </Card>
 

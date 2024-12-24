@@ -11,7 +11,6 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Define Zod schema for the correction response
 const CorrectionSchema = z.object({
   corrected: z.string().describe("The corrected version of the input text"),
   corrections: z.array(
@@ -33,6 +32,7 @@ export async function POST(req: Request) {
     const { text } = await req.json();
 
     const response = await openai.beta.chat.completions.parse({
+      // model: "o1-preview",
       model: "gpt-4o",
       messages: [
         {

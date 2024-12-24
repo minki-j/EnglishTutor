@@ -1,6 +1,11 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema({
+  googleId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
   name: {
     type: String,
     required: true,
@@ -13,11 +18,6 @@ const UserSchema = new mongoose.Schema({
   image: {
     type: String,
   },
-  googleId: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -28,4 +28,4 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema); 
+export default mongoose.models.User || mongoose.model("User", UserSchema);
