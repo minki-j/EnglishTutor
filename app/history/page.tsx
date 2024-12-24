@@ -1,26 +1,40 @@
-"use client";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
+import { CorrectionCard } from "@/components/correction-card";
+import { redirect } from "next/navigation";
+import connectDB from "@/lib/mongodb";
+import Correction from "@/models/Correction";
 
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { PenLine } from "lucide-react";
-import { signIn } from "next-auth/react";
-import { useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+export default async function HistoryPage() {
+  const session = await getServerSession(authOptions);
+  
+  if (!session) {
+    redirect("/");
+  }
 
-export default function HistoryPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+  await connectDB();
+  const corrections = await Correction.find({ 
+    userId: session.user?.id 
+  }).sort({ createdAt: -1 }).lean();
 
-  useEffect(() => {
-    if (status !== "authenticated") {
-      router.push("/");
-    }
-  }, [status, router]);
+  const formattedCorrections = corrections.map((correction: any) => ({
+    id: correction._id.toString(),
+    original: correction.originalText,
+    corrected: correction.correctedText,
+    corrections: correction.corrections,
+  }));
 
   return (
-    <div>
-      <p className="text-muted-foreground">Hi {session?.user?.name}</p>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Your Correction History</h1>
+      <div className="space-y-4">
+        {formattedCorrections.map((correction) => (
+          <CorrectionCard key={correction.id} entry={correction} />
+        ))}
+        {formattedCorrections.length === 0 && (
+          <p className="text-muted-foreground">No history found.</p>
+        )}
+      </div>
     </div>
   );
 }

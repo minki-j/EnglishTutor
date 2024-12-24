@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { CorrectionCard } from "./correction-card";
 
 interface WritingEntry {
   id: string;
@@ -17,12 +18,14 @@ interface WritingEntry {
 }
 
 export function WritingSection() {
+  // const { data: session } = useSession();
+  // console.log("======= session =======\n", session);
   const [entries, setEntries] = useState<WritingEntry[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const checkWriting = async () => {
+  const correctWriting = async () => {
     if (!currentText.trim()) {
       toast({
         title: "Error",
@@ -52,6 +55,13 @@ export function WritingSection() {
 
       setEntries([newEntry, ...entries]);
       setCurrentText("");
+      
+      await navigator.clipboard.writeText(data.corrected);
+      toast({
+        description: "Corrected text is copied to clipboard",
+        duration: 2000,
+      });
+      
     } catch (error) {
       toast({
         title: "Error",
@@ -63,6 +73,13 @@ export function WritingSection() {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      correctWriting();
+    }
+  };
+
   return (
     <div className="space-y-8">
       <Card className="p-6">
@@ -70,43 +87,17 @@ export function WritingSection() {
           placeholder="Enter your text here..."
           value={currentText}
           onChange={(e) => setCurrentText(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="min-h-[200px] mb-4"
-        />
-        <Button
-          onClick={checkWriting}
           disabled={isLoading}
-          className="w-full"
-        >
+        />
+        <Button onClick={correctWriting} disabled={isLoading} className="w-full">
           {isLoading ? "Checking..." : "Check My Writing"}
         </Button>
       </Card>
 
       {entries.map((entry) => (
-        <Card key={entry.id} className="p-6">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Original Text</h3>
-              <p className="text-foreground">{entry.original}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">Corrected Version</h3>
-              <p className="text-foreground">{entry.corrected}</p>
-            </div>
-            {entry.corrections.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground mb-2">Corrections</h3>
-                <ul className="list-disc pl-4 space-y-4">
-                  {entry.corrections.map((correction, index) => (
-                    <li key={index} className="text-foreground">
-                      <p className="font-medium">{correction.correction}</p>
-                      <p className="text-sm text-muted-foreground mt-1">{correction.explanation}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </Card>
+        <CorrectionCard key={entry.id} entry={entry} />
       ))}
     </div>
   );

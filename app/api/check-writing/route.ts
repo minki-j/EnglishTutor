@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import connectDB from "@/lib/mongodb";
+import Correction from "@/models/Correction";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -11,13 +13,17 @@ const openai = new OpenAI({
 
 // Define Zod schema for the correction response
 const CorrectionSchema = z.object({
-  corrected: z.string(),
-  corrections: z.array(z.object({correction: z.string(), explanation: z.string()})),
+  corrected: z.string().describe("The corrected version of the input text"),
+  corrections: z.array(
+    z.object({
+      correction: z.string().describe("before and after correction connected by '→'"),
+      explanation: z.string().describe("Detailed explanation of why the correction was made")
+    })
+  ).describe("Array of corrections and their explanations"),
 });
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  console.log("API session:", session);
   
   if (!session) {
     return new NextResponse("Unauthorized", { status: 401 });
@@ -27,7 +33,7 @@ export async function POST(req: Request) {
     const { text } = await req.json();
 
     const response = await openai.beta.chat.completions.parse({
-      model: "gpt-4o-mini",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
@@ -41,6 +47,12 @@ Always respond with JSON with markdown formatting for strings in the following f
   "corrected": "string of corrected text",
   "corrections": [{"correction": "string explaining each correction", "explanation": "string explaining each correction"}]
 }
+
+And keep in mind these important rules:
+- When the user's text is unclear, ask for clarification.
+- Don't make corrections that are not needed. For example, don't change phrases just because it's more fancy or complex. You should only correct when the user says something that is not grammatically correct, sounds unnatural or is not clear.
+- Do not make corrections with capitalization and commas unless it's absolutely necessary.
+- When there are more then 3 corrections, only add 3 most important ones in the corrections array.
 
 ---
 
@@ -72,11 +84,11 @@ corrections: []
 
 ---
 
-Important rules:
-- Use backticks to quote strings.
-- Use markdown formatting for strings.
-- When the user's text is unclear, ask for clarification.
-- Don't make corrections that are not needed. For example, don't change phrases just because it's more fancy or complex. You should only correct when the user says something that is not grammatically correct, sounds unnatural or is not clear.
+Important!!
+- Do not make corrections with capitalization and commas unless it's absolutely necessary.
+- Even if you make corrections for capitalization and commas, don't put them in the corrections array.
+
+
 `,
         },
         {
@@ -87,6 +99,21 @@ Important rules:
       response_format: zodResponseFormat(CorrectionSchema, "correction"),
     });
     const result = response.choices[0].message.parsed;
+    if (!result) {
+      return new NextResponse("Failed to parse response", { status: 500 });
+    }
+
+    // Connect to MongoDB
+    await connectDB();
+
+    // Save the correction to MongoDB
+    await Correction.create({
+      userId: session.user?.id,
+      originalText: text,
+      correctedText: result.corrected,
+      corrections: result.corrections,
+    });
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error checking writing:", error);
