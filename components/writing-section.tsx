@@ -15,6 +15,7 @@ interface WritingEntry {
     correction: string;
     explanation: string;
   }[];
+  createdAt: Date;
 }
 
 interface WritingSectionProps {
@@ -61,6 +62,7 @@ export function WritingSection({ autoFocus = false }: WritingSectionProps) {
         original: currentText,
         corrected: data.corrected,
         corrections: data.corrections,
+        createdAt: new Date(),
       };
 
       setEntries([newEntry, ...entries]);
