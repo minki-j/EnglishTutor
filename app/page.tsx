@@ -7,7 +7,6 @@ import { redirect } from "next/navigation";
 export default function Home() {
   const { data: session, status } = useSession();
 
-  
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-[80vh]">
@@ -16,13 +15,15 @@ export default function Home() {
     );
   }
   
-  if (!session) {
+  const isTemporaryUser = sessionStorage.getItem("temporary_user") === "true";
+
+  if (status === "unauthenticated" && !isTemporaryUser) {
     redirect("/auth/signin");
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <WritingSection />
+      <WritingSection autoFocus={true} />
     </div>
   );
 }

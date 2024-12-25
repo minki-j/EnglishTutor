@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
@@ -17,11 +17,22 @@ interface WritingEntry {
   }[];
 }
 
-export function WritingSection() {
+interface WritingSectionProps {
+  autoFocus?: boolean;
+}
+
+export function WritingSection({ autoFocus = false }: WritingSectionProps) {
   const [entries, setEntries] = useState<WritingEntry[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isLoading && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isLoading]);
 
   const correctWriting = async () => {
     if (!currentText.trim()) {
@@ -29,6 +40,7 @@ export function WritingSection() {
         title: "Error",
         description: "Please enter some text to check",
         variant: "destructive",
+        duration: 4000,
       });
       return;
     }
@@ -59,12 +71,13 @@ export function WritingSection() {
         description: "Corrected text is copied to clipboard",
         duration: 2000,
       });
-      
+
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to check writing. Please try again.",
         variant: "destructive",
+        duration: 4000,
       });
     } finally {
       setIsLoading(false);
@@ -82,12 +95,14 @@ export function WritingSection() {
     <div className="space-y-8">
       <Card className="p-6">
         <Textarea
+          ref={textareaRef}
           placeholder="Enter your text here..."
           value={currentText}
           onChange={(e) => setCurrentText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="min-h-[200px] mb-4"
+          className="min-h-[200px] mb-4 text-lg"
           disabled={isLoading}
+          autoFocus={autoFocus}
         />
         <Button onClick={correctWriting} disabled={isLoading} className="w-full">
           {isLoading ? "Checking..." : "Correct My Writing (Cmd+Enter)"}

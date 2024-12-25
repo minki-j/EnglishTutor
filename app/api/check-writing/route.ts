@@ -23,10 +23,6 @@ const CorrectionSchema = z.object({
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  
-  if (!session) {
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
 
   try {
     const { text } = await req.json();
@@ -103,16 +99,15 @@ Important!!
       return new NextResponse("Failed to parse response", { status: 500 });
     }
 
-    // Connect to MongoDB
-    await connectDB();
-
-    // Save the correction to MongoDB
-    await Correction.create({
-      userId: session.user?.id,
-      originalText: text,
-      correctedText: result.corrected,
-      corrections: result.corrections,
-    });
+    if (session) {
+      await connectDB();
+      await Correction.create({
+        userId: session.user?.id,
+        originalText: text,
+        correctedText: result.corrected,
+        corrections: result.corrections,
+      });
+    }
 
     return NextResponse.json(result);
   } catch (error) {

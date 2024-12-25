@@ -17,7 +17,11 @@ export default function SignIn() {
       router.push("/");
     }
   }, [status, router]);
-  
+
+  const createTemporaryUser = async () => {
+    sessionStorage.setItem("temporary_user", "true");
+    router.push("/");
+  };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -38,6 +42,12 @@ export default function SignIn() {
             }
           >
             Sign in with Google
+          </Button>
+          <Button
+            className="w-full bg-muted-foreground"
+            onClick={() => createTemporaryUser()}
+          >
+            Try first without sign in
           </Button>
         </div>
       </Card>
