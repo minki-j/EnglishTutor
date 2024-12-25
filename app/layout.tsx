@@ -9,7 +9,7 @@ import { AuthProvider } from '@/components/auth-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'WriteBetter - English Writing Assistant',
+  title: 'EnglishTutor',
   description: 'Improve your English writing skills with AI-powered corrections and quizzes',
 };
 

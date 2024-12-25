@@ -17,8 +17,7 @@ export default function SignIn() {
       router.push("/");
     }
   }, [status, router]);
-
-
+  
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center">
@@ -27,16 +26,16 @@ export default function SignIn() {
           <div className="flex justify-center">
             <PenLine className="h-12 w-12 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Welcome to 
-            EnglishTutor
-          </h1>
+          <h1 className="text-2xl font-bold">Welcome to EnglishTutor</h1>
           <p className="text-muted-foreground">
-            Sign in to start improving your English writing skills with AI-powered
-            corrections and personalized quizzes.
+            Sign in to start improving your English writing skills with
+            AI-powered corrections and personalized quizzes.
           </p>
           <Button
             className="w-full"
-            onClick={() => signIn("google", { callbackUrl: "/" })}
+            onClick={() =>
+              signIn("google")
+            }
           >
             Sign in with Google
           </Button>
