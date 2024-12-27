@@ -1,13 +1,16 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { CorrectionCard } from "./correction-card";
+
 import type { WritingEntry } from "@/types/writingEntry";
-import { useSession } from "next-auth/react";
+import { CorrectionCard } from "./correction-card";
+
 export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   const [entries, setEntries] = useState<WritingEntry[]>([]);
   const [currentText, setCurrentText] = useState("");
@@ -36,7 +39,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     }
 
     setIsLoading(true);
-    const websocket = new WebSocket("ws://localhost:8000/ws/tutor");
+    const backendUrl = process.env.BACKEND_URL;
+    const websocket = new WebSocket(backendUrl + "ws/tutor");
 
     try {
       // Wait for the connection to open
@@ -48,7 +52,6 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       // Set up message handler
       websocket.onmessage = (event) => {
         const response = JSON.parse(event.data);
-        console.log("==>> onmessage: ", response);
 
         if (response.error) {
           toast({
@@ -71,7 +74,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
             (entry) => entry.id === newEntry.id
           );
           if (existingEntryIndex == -1) {
-            return [...prev, newEntry];
+            return [newEntry, ...prev];
           } else {
             // Update existing entry, preserving original fields
             const updatedEntries = [...prev];
@@ -117,7 +120,6 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         websocket.close();
       };
 
-      // Send the message
       websocket.send(
         JSON.stringify({
           type: type,

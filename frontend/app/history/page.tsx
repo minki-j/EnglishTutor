@@ -4,6 +4,7 @@ import { CorrectionCard } from "@/components/correction-card";
 import { redirect } from "next/navigation";
 import connectDB from "@/lib/mongodb";
 import Correction from "@/models/Correction";
+import type { WritingEntry } from "@/types/writingEntry";
 
 export default async function HistoryPage({
   searchParams,
@@ -32,8 +33,9 @@ export default async function HistoryPage({
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  const formattedCorrections = corrections.map((correction: any) => ({
+  const formattedCorrections = corrections.map((correction: any): WritingEntry => ({
     id: correction._id.toString(),
+    type: correction.type,
     input: correction.originalText,
     corrected: correction.correctedText,
     corrections: correction.corrections.map((c: any) => ({

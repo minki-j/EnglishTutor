@@ -92,6 +92,8 @@ async def tutor_ws(websocket: WebSocket):
         if "correction" in data and isinstance(data["correction"], CorrectionItem):
             data["correction"] = data["correction"].model_dump()
             result["corrections"].append(data["correction"])
+        elif "corrected" in data:
+            result["correctedText"] = data["corrected"]
         else:
             result.update(data)
 
