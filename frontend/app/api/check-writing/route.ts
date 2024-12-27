@@ -6,6 +6,7 @@ import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import connectDB from "@/lib/mongodb";
 import Correction from "@/models/Correction";
+import mongoose from "mongoose";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -102,6 +103,7 @@ Important!!
     if (session) {
       await connectDB();
       await Correction.create({
+        _id: new mongoose.Types.ObjectId(),
         userId: session.user?.id,
         originalText: text,
         correctedText: result.corrected,

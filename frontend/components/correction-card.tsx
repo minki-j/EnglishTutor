@@ -3,24 +3,13 @@
 import { Check, Copy, Trash2 } from "lucide-react";
 import { Card } from "./ui/card";
 import { useToast } from "@/components/ui/use-toast";
-
-interface Correction {
-  id: string;
-  original: string;
-  corrected: string;
-  corrections: {
-    correction: string;
-    explanation: string;
-  }[];
-  createdAt: Date;
-}
+import type { WritingEntry } from "@/types/writingEntry";
 
 interface CorrectionCardProps {
-  entry: Correction;
-  key?: string;
+  entry: WritingEntry;
 }
 
-export function CorrectionCard({ entry, key }: CorrectionCardProps) {
+export function CorrectionCard({ entry }: CorrectionCardProps) {
   const { toast } = useToast();
 
   const copyToClipboard = async (text: string) => {
@@ -60,7 +49,7 @@ export function CorrectionCard({ entry, key }: CorrectionCardProps) {
   };
 
   return (
-    <Card className={`p-6 relative`} key={key}>
+    <Card className={`p-6 relative`}>
       <div className="flex justify-between items-stretch">
         <div className="space-y-4 flex-[0.9]">
           <div className="flex justify-between items-start">
@@ -85,15 +74,15 @@ export function CorrectionCard({ entry, key }: CorrectionCardProps) {
             </h3>
             <div
               className="group relative cursor-pointer hover:bg-muted/50 rounded-sm p-1 -m-1"
-              onClick={() => copyToClipboard(entry.corrected)}
+              onClick={() => copyToClipboard(entry.corrected ?? '')}
             >
-              <p className="text-foreground pr-8">{entry.corrected}</p>
+              <p className="text-foreground pr-8">{entry.corrected ?? ''}</p>
               <div className="absolute right-2 top-2">
                 <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
             </div>
           </div>
-          {entry.corrections.length > 0 && (
+          {entry.corrections?.length > 0 && (
             <div className="mt-4">
               <h3 className="text-xs font-medium text-muted-foreground mb-2">
                 Explanations
