@@ -22,7 +22,9 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     }
   }, [isLoading]);
 
-  const processText = async (type: 'correction' | 'vocabulary' | 'breakdown') => {
+  const processText = async (
+    type: "correction" | "vocabulary" | "breakdown"
+  ) => {
     if (!currentText.trim()) {
       toast({
         title: "Error",
@@ -34,7 +36,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     }
 
     setIsLoading(true);
-    const websocket = new WebSocket('ws://localhost:8000/ws/tutor');
+    const websocket = new WebSocket("ws://localhost:8000/ws/tutor");
 
     try {
       // Wait for the connection to open
@@ -45,23 +47,57 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
 
       // Set up message handler
       websocket.onmessage = (event) => {
-        console.log("==>> onmessage: ", event.data);
         const response = JSON.parse(event.data);
-        
+        console.log("==>> onmessage: ", response);
+
+        if (response.error) {
+          toast({
+            title: "Error",
+            description: response.error,
+            variant: "destructive",
+            duration: 4000,
+          });
+          return;
+        }
+
         const newEntry: WritingEntry = {
-          id: Date.now().toString(),
-          type: response.type,
-          original: currentText,
-          ...response.data,
+          input: currentText,
           createdAt: new Date(),
+          ...response,
         };
 
-        setEntries(prev => [newEntry, ...prev]);
+        setEntries((prev) => {
+          const existingEntryIndex = prev.findIndex(
+            (entry) => entry.id === newEntry.id
+          );
+          if (existingEntryIndex == -1) {
+            return [...prev, newEntry];
+          } else {
+            // Update existing entry, preserving original fields
+            const updatedEntries = [...prev];
+            if (response.correction) {
+              updatedEntries[existingEntryIndex] = {
+                ...updatedEntries[existingEntryIndex], // Keep existing fields
+                corrections: [
+                  ...(updatedEntries[existingEntryIndex].corrections || []),
+                  response.correction,
+                ], // append with new corrections
+              };
+            } else {
+              updatedEntries[existingEntryIndex] = {
+                ...updatedEntries[existingEntryIndex],
+                ...newEntry,
+              };
+            }
+            return updatedEntries;
+          }
+        });
+
         setCurrentText("");
         setIsLoading(false);
 
-        if (response.type === 'correction' && response.data.corrected) {
-          navigator.clipboard.writeText(response.data.corrected);
+        if (response.type === "correction" && response.corrected) {
+          navigator.clipboard.writeText(response.corrected);
           toast({
             description: "Corrected text is copied to clipboard",
             duration: 2000,
@@ -70,7 +106,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       };
 
       websocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.error("WebSocket error:", error);
         toast({
           title: "Error",
           description: "WebSocket connection error",
@@ -82,12 +118,13 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       };
 
       // Send the message
-      websocket.send(JSON.stringify({
-        action: type,
-        input: currentText,
-        user_id: session?.user?.id,
-      }));
-
+      websocket.send(
+        JSON.stringify({
+          type: type,
+          input: currentText,
+          user_id: session?.user?.id,
+        })
+      );
     } catch (error) {
       setIsLoading(false);
       websocket.close();
@@ -101,13 +138,13 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
-        processText('correction');
+        processText("correction");
       } else if (e.shiftKey) {
         e.preventDefault();
-        processText('vocabulary');
+        processText("vocabulary");
       }
     }
   };
@@ -171,9 +208,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         </div>
       </Card>
 
-      {entries.length > 0 && entries.map((entry) => (
-        <CorrectionCard entry={entry} key={entry.id} />
-      ))}
+      {entries.length > 0 &&
+        entries.map((entry) => <CorrectionCard entry={entry} key={entry.id} />)}
     </div>
   );
 }

@@ -59,9 +59,9 @@ export function CorrectionCard({ entry }: CorrectionCardProps) {
               </h3>
               <div
                 className="group relative cursor-pointer hover:bg-muted/50 rounded-sm p-1 -m-1"
-                onClick={() => copyToClipboard(entry.original)}
+                onClick={() => copyToClipboard(entry.input)}
               >
-                <p className="text-foreground pr-8">{entry.original}</p>
+                <p className="text-foreground pr-8">{entry.input}</p>
                 <div className="absolute right-2 top-2">
                   <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -93,7 +93,7 @@ export function CorrectionCard({ entry }: CorrectionCardProps) {
                   onClick={() =>
                     copyToClipboard(
                       "Original: " +
-                        entry.original +
+                        entry.input +
                         "\n\n" +
                         "Corrected: " +
                         entry.corrected +

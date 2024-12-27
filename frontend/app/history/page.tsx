@@ -34,7 +34,7 @@ export default async function HistoryPage({
 
   const formattedCorrections = corrections.map((correction: any) => ({
     id: correction._id.toString(),
-    original: correction.originalText,
+    input: correction.originalText,
     corrected: correction.correctedText,
     corrections: correction.corrections.map((c: any) => ({
       ...c,

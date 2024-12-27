@@ -1,38 +1,41 @@
+from bson import ObjectId
+from datetime import datetime
+
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from fastapi.websockets import WebSocketDisconnect
-import asyncio
-from datetime import datetime
-from app.models import WritingRequest, WritingCorrection, VocabularyExplanation, SentenceBreakdown, Correction
-from app.workflows.correction import compile_graph_with_async_checkpointer
-from bson import ObjectId
-from app.db.mongodb import connect_to_mongo, db
 from contextlib import asynccontextmanager
 
+from app.workflows.correction import g as correction_graph
+from app.workflows.vocabulary import g as vocabulary_graph
+from app.workflows.breakdown import g as breakdown_graph
+
+from app.db.mongodb import ping_mongodb, main_db
+from app.utils.compile_graph import compile_graph_with_async_checkpointer
+from app.models import CorrectionItem
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    await connect_to_mongo()
+    await ping_mongodb()
     yield
-    # Shutdown (if you need cleanup)
-    # Add cleanup code here if needed
+
 
 app = FastAPI(title="English Tutor API", lifespan=lifespan)
 
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"], 
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Service is running"}
+
 
 @app.websocket("/ws/tutor")
 async def tutor_ws(websocket: WebSocket):
@@ -41,64 +44,73 @@ async def tutor_ws(websocket: WebSocket):
     """
     await websocket.accept()
 
-    try:
-        data = await websocket.receive_json()
-        print(f"==>> data: {data}")
+    # try:
+    data = await websocket.receive_json()
 
-        action = data.get("action")
-        input = {"input": data.get("input")}
-        user_id = data.get("user_id")
+    type = data.get("type")
+    input = data.get("input")
+    user_id = data.get("user_id")
 
-        if not action:
-            await websocket.send_json({"error": "No action provided"})
-            return
+    if not type or not input or not user_id:
+        error_msg = (
+            "No type provided"
+            if not type
+            else "No text provided" if not input else "No user ID provided"
+        )
+        await websocket.send_json({"error": error_msg})
+        return
 
-        if not input:
-            await websocket.send_json({"error": "No text provided"})
-            return
-        
-        if not user_id:
-            await websocket.send_json({"error": "No user ID provided"})
-            return
+    if type == "correction":
+        workflow = await compile_graph_with_async_checkpointer(correction_graph, type)
+    elif type == "vocabulary":
+        workflow = await compile_graph_with_async_checkpointer(vocabulary_graph, type)
+    elif type == "breakdown":
+        workflow = await compile_graph_with_async_checkpointer(breakdown_graph, type)
+    else:
+        raise HTTPException(status_code=400, detail="Invalid type")
 
-        if action == "correction":
-            graph = await compile_graph_with_async_checkpointer()
-        # elif action == "vocabulary":
-        #     graph = vocabulary_graph
-        # elif action == "breakdown":
-        #     graph = breakdown_graph
+    correction_id = ObjectId()
+    correction_id_str = str(correction_id)
+
+    config = {"configurable": {"thread_id": correction_id_str}}
+    result = {
+        "_id": correction_id,
+        "userId": user_id,
+        "originalText": input,
+        "correctedText": "",
+        "corrections": [],
+        "createdAt": datetime.now(),
+    }
+
+    # Stream the intermediate results from the workflow via websocket connection
+    async for data in workflow.astream(
+        {"input": input, "thread_id": correction_id_str},
+        stream_mode="custom",
+        config=config,
+    ):
+        # Serialize CorrectionItem
+        if "correction" in data and isinstance(data["correction"], CorrectionItem):
+            data["correction"] = data["correction"].model_dump()
+            result["corrections"].append(data["correction"])
         else:
-            raise HTTPException(status_code=400, detail="Invalid action")
+            result.update(data)
 
-        correction_id = ObjectId()
-        config = {"configurable": {"thread_id": user_id + "-" + str(correction_id)}}
+        await websocket.send_json({"id": correction_id_str, "type": type, **data})
 
-        print(f"==>> async stream")
-        async for data in graph.astream(input, stream_mode="values", config=config):
-            await websocket.send_json(data)
-            result = data
-        print(f"==>> async stream done with result: {result}")    
+    await main_db.corrections.insert_one(result)
 
-        await db.corrections.insert_one({
-            "_id": correction_id,
-            "userId": user_id,
-            "originalText": input["input"],
-            "correctedText": result.get("corrected"),
-            "corrections": result.get("corrections"),
-            "createdAt": datetime.now()
-        })
-
-    except WebSocketDisconnect:
-        print("Client disconnected")
-        pass
-    except Exception as e:
-        print(f"==>> error: {e}")
-        await websocket.send_json({"error": str(e)})
-    finally:
-        print("==>> closing websocket")
-        await websocket.close()
+    # except WebSocketDisconnect:
+    #     print("Client disconnected")
+    #     pass
+    # except Exception as e:
+    #     print(f"==>> error: {e}")
+    #     await websocket.send_json({"error": str(e)})
+    # finally:
+    #     print("==>> closing websocket")
+    #     await websocket.close()
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

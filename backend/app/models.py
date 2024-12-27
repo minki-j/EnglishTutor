@@ -5,8 +5,12 @@ from bson import ObjectId
 
 
 class CorrectionItem(BaseModel):
-    correction: str
-    explanation: str
+    correction: str = Field(
+        description="A short title for the correction. Examples: 'one hours → one hour', 'restructure the sentence', 'an access → access', 'drop `within`', 'is a good idea → was a good idea'"
+    )
+    explanation: str = Field(
+        description="A detailed explanation for the correction."
+    )
 
 
 class Correction(BaseModel):
@@ -25,7 +29,7 @@ class WritingRequest(BaseModel):
     text: str
 
 class WritingCorrection(BaseModel):
-    original: str
+    input: str
     corrected: str
     explanation: str
 

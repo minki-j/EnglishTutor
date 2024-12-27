@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 interface Correction {
   id: string;
-  original: string;
+  input: string;
   corrected: string;
   corrections: {
     correction: string;
@@ -47,7 +47,7 @@ export function CorrectionCard({ entry, key }: CorrectionCardProps) {
           <h3 className="text-xs font-medium text-muted-foreground mb-2">
             Original
           </h3>
-          <p className="text-foreground">{entry.original}</p>
+          <p className="text-foreground">{entry.input}</p>
         </div>
         <div className="relative">
           <h3 className="text-xs font-medium text-muted-foreground mb-2">
@@ -73,7 +73,7 @@ export function CorrectionCard({ entry, key }: CorrectionCardProps) {
               onClick={() =>
                 copyToClipboard(
                   "Original: " +
-                    entry.original +
+                    entry.input +
                     "\n\n" +
                     "Corrected: " +
                     entry.corrected +

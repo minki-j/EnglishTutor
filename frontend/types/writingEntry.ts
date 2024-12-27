@@ -6,7 +6,7 @@ export interface Correction {
 export interface WritingEntry {
   id: string;
   type: "correction" | "vocabulary" | "breakdown";
-  original: string;
+  input: string;
   corrected?: string;
   corrections: Correction[];
 
