@@ -2,3 +2,10 @@ This is an web application that not only corrects your English writing but also 
 
 Try the app here: [Link](https://englishtutor-production.up.railway.app)
 
+
+
+### run backend 
+```bash
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```

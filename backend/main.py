@@ -5,7 +5,7 @@ from fastapi.websockets import WebSocketDisconnect
 import asyncio
 from datetime import datetime
 from app.models import WritingRequest, WritingCorrection, VocabularyExplanation, SentenceBreakdown, Correction
-from app.workflows.correction import correction_graph
+from app.workflows.correction import compile_graph_with_async_checkpointer
 from bson import ObjectId
 from app.db.mongodb import connect_to_mongo, db
 from contextlib import asynccontextmanager
@@ -46,7 +46,7 @@ async def tutor_ws(websocket: WebSocket):
         print(f"==>> data: {data}")
 
         action = data.get("action")
-        input = data.get("input")
+        input = {"input": data.get("input")}
         user_id = data.get("user_id")
 
         if not action:
@@ -62,7 +62,7 @@ async def tutor_ws(websocket: WebSocket):
             return
 
         if action == "correction":
-            graph = correction_graph
+            graph = await compile_graph_with_async_checkpointer()
         # elif action == "vocabulary":
         #     graph = vocabulary_graph
         # elif action == "breakdown":
@@ -74,16 +74,15 @@ async def tutor_ws(websocket: WebSocket):
         config = {"configurable": {"thread_id": user_id + "-" + str(correction_id)}}
 
         print(f"==>> async stream")
-        #! astream not working.. probably because of the checkpointerx
         async for data in graph.astream(input, stream_mode="values", config=config):
             await websocket.send_json(data)
             result = data
+        print(f"==>> async stream done with result: {result}")    
 
-        print(f"==>> async stream done")    
-        await Correction.create({
-            "id": correction_id,
+        await db.corrections.insert_one({
+            "_id": correction_id,
             "userId": user_id,
-            "originalText": input,
+            "originalText": input["input"],
             "correctedText": result.get("corrected"),
             "corrections": result.get("corrections"),
             "createdAt": datetime.now()
