@@ -39,8 +39,10 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     }
 
     setIsLoading(true);
-    const backendUrl = process.env.BACKEND_URL;
-    const websocket = new WebSocket(backendUrl + "ws/tutor");
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+    const websocketUrl =
+      "ws://" + backendUrl?.split("://")[1] + "ws/tutor";
+    const websocket = new WebSocket(websocketUrl);
 
     try {
       // Wait for the connection to open
@@ -119,7 +121,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         setIsLoading(false);
         websocket.close();
       };
-
+      
       websocket.send(
         JSON.stringify({
           type: type,
