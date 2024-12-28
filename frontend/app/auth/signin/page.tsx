@@ -35,20 +35,20 @@ export default function SignIn() {
             Sign in to start improving your English writing skills with
             AI-powered corrections and personalized quizzes.
           </p>
-          <Button
-            className="w-full"
-            onClick={() =>
-              signIn("google")
-            }
-          >
-            Sign in with Google
-          </Button>
-          <Button
-            className="w-full bg-muted-foreground"
-            onClick={() => createTemporaryUser()}
-          >
-            Try first without sign in
-          </Button>
+          <div className="space-y-2">
+            <Button
+              className="w-full"
+              onClick={() => signIn("google")}
+            >
+              Sign in with Google
+            </Button>
+            <Button
+              className="w-full bg-secondary text-secondary-foreground hover:text-secondary"
+              onClick={() => createTemporaryUser()}
+            >
+              Try first without sign in
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

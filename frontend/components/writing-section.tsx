@@ -39,17 +39,36 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     }
 
     setIsLoading(true);
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-    const websocketUrl =
-      "ws://" + backendUrl?.split("://")[1] + "ws/tutor";
-    const websocket = new WebSocket(websocketUrl);
+    let websocket: WebSocket;
+    try {
+      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const websocketUrl =
+        "wss://" + backendUrl?.split("://")[1] + "ws/tutor";
+      websocket = new WebSocket(websocketUrl);
+    } catch (error) {
+      console.error("Failed to connect to WebSocket:", error);
+      toast({
+        title: "Error",
+        description: "Failed to connect to WebSocket",
+        variant: "destructive",
+        duration: 4000,
+      });
+      setIsLoading(false);
+      return;
+    }
+
 
     try {
       // Wait for the connection to open
-      await new Promise((resolve, reject) => {
-        websocket.onopen = resolve;
-        websocket.onerror = reject;
-      });
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          websocket.onopen = resolve;
+          websocket.onerror = reject;
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Connection timeout')), 5000)
+        )
+      ]);
 
       // Set up message handler
       websocket.onmessage = (event) => {
@@ -126,7 +145,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         JSON.stringify({
           type: type,
           input: currentText,
-          user_id: session?.user?.id,
+          user_id: session?.user?.id || "temporary_user",
         })
       );
     } catch (error) {
