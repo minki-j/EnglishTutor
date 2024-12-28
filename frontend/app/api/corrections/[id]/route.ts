@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
-import Correction from "@/models/Correction";
+import { CorrectionModel } from "@/models/Correction";
 
 export async function DELETE(
   req: Request,
@@ -17,7 +17,7 @@ export async function DELETE(
 
     await connectDB();
 
-    const correction = await Correction.findOne({
+    const correction = await CorrectionModel.findOne({
       _id: params.id,
       userId: session.user?.id,
     });
@@ -26,7 +26,7 @@ export async function DELETE(
       return new NextResponse("Correction not found", { status: 404 });
     }
 
-    await Correction.findByIdAndDelete(params.id);
+    await CorrectionModel.findByIdAndDelete(params.id);
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {

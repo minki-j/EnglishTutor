@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
 import type { WritingEntry } from "@/types/writingEntry";
-import { CorrectionCard } from "./correction-card";
+import { ResultCard } from "./result-card";
 
 export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   const [entries, setEntries] = useState<WritingEntry[]>([]);
@@ -84,6 +84,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           return;
         }
 
+        // TODO : use the correct type
         const newEntry: WritingEntry = {
           input: currentText,
           createdAt: new Date(),
@@ -232,7 +233,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       </Card>
 
       {entries.length > 0 &&
-        entries.map((entry) => <CorrectionCard entry={entry} key={entry.id} />)}
+        entries.map((entry) => <ResultCard entry={entry}/>)}
     </div>
   );
 }

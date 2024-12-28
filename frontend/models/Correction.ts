@@ -1,6 +1,21 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const CorrectionSchema = new mongoose.Schema({
+export interface ICorrectionItem {
+  correction: string;
+  explanation: string;
+}
+
+export interface ICorrection {
+  id: string;
+  type: "correction";
+  userId: string;
+  originalText: string;
+  correctedText: string;
+  corrections: ICorrectionItem[];
+  createdAt: Date;
+}
+
+const CorrectionSchema = new mongoose.Schema<ICorrection>({
   userId: {
     type: String,
     required: true,
@@ -13,14 +28,17 @@ const CorrectionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  corrections: [{
-    correction: String,
-    explanation: String,
-  }],
+  corrections: [
+    {
+      correction: String,
+      explanation: String,
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-export default mongoose.models.Correction || mongoose.model('Correction', CorrectionSchema); 
+export const CorrectionModel =
+  mongoose.models.Correction || mongoose.model("Correction", CorrectionSchema);
