@@ -57,6 +57,7 @@ export function ResultCard({ entry }: Props) {
   };
 
   const cardContent = (entry: ICorrection | IVocabulary | IBreakdown) => {
+ 
     if (entry.type === "correction") {
       return <CardContentCorrection entry={entry} copyToClipboard={copyToClipboard} />;
     } else if (entry.type === 'vocabulary') {

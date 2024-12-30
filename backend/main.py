@@ -52,9 +52,8 @@ async def tutor_ws(websocket: WebSocket):
     """
     correct the provided input and provide explanations for corrections.
     """
-    await websocket.accept()
-
     try:
+        await websocket.accept()
         data = await websocket.receive_json()
 
         type = data.get("type")
@@ -98,6 +97,7 @@ async def tutor_ws(websocket: WebSocket):
         config = {"configurable": {"thread_id": result_id_str}}
 
         # Stream the intermediate results
+        # TODO: Not working for Vocabulary and Breakdown
         async for data in workflow.astream(
             {"input": input, "thread_id": result_id_str},
             stream_mode="custom",
@@ -108,6 +108,8 @@ async def tutor_ws(websocket: WebSocket):
             if "correction" in data and isinstance(data["correction"], CorrectionItem):
                 result.corrections.append(data["correction"])
                 data["correction"] = data["correction"].model_dump()
+            elif "example" in data and isinstance(data["example"], str):
+                result.examples.append(data["example"])
             else:
                 for key, value in data.items():
                     if hasattr(result, key):
@@ -121,21 +123,33 @@ async def tutor_ws(websocket: WebSocket):
                     **data,
                 }
             )
-            print("result: ", result)
 
+        print("\n >>> result: ", result)
         # Convert Pydantic model to dictionary before inserting
         result_dict = result.model_dump()
         result_dict['_id'] = result_dict.pop('id')
         await main_db.results.insert_one(result_dict)
 
     except WebSocketDisconnect:
-        print("Client disconnected")
-        pass
+        print(f"WebSocket disconnected")
+    except ValueError as e:
+        print(f"JSON parsing error: {str(e)}")
+        await websocket.send_json({"error": f"Invalid JSON format: {str(e)}"})
+    except HTTPException as e:
+        print(f"HTTP error {e.status_code}: {e.detail}")
+        await websocket.send_json({"error": e.detail})
     except Exception as e:
-        print(f"==>> error: {e}")
-        await websocket.send_json({"error": str(e)})
+        # Get detailed error information
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Unexpected error: {str(e)}")
+        print(f"Traceback:\n{error_trace}")
+        await websocket.send_json({
+            "error": str(e),
+            "details": error_trace if app.debug else "Internal server error"
+        })
     finally:
-        print("==>> closing websocket")
+        print("Closing WebSocket connection")
         await websocket.close()
 
 

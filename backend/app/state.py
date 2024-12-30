@@ -16,6 +16,8 @@ def append(original: list, new: CorrectionItem):
 class OutputState(BaseModel):
     correctedText: str = Field(default="")
     corrections: Annotated[list[CorrectionItem], append] = Field(default_factory=list)
+    definition: str = Field(default="")
+    examples: Annotated[list[str], append] = Field(default_factory=list)
 
 
 class InputState(BaseModel):

@@ -6,9 +6,7 @@ export interface IVocabulary {
   userId: string;
   input: string;
   definition: string;
-  examples: Array<{
-    example: string;
-  }>;
+  examples: string[];
   createdAt: Date;
 }
 
@@ -29,12 +27,10 @@ const VocabularySchema = new mongoose.Schema<IVocabulary>({
     type: String,
     required: true,
   },
-  examples: [{
-    example: {
-      type: String,
-      required: true,
-    }
-  }],
+  examples: {
+    type: [String],
+    required: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

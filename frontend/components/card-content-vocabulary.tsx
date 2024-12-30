@@ -7,6 +7,7 @@ interface Props {
 }
 
 export function CardContentVocabulary({ entry, copyToClipboard }: Props) {
+  console.log("entry: ", entry);
   return (
     <div className="space-y-4 flex-[0.9]">
       <CardSection
@@ -15,26 +16,24 @@ export function CardContentVocabulary({ entry, copyToClipboard }: Props) {
         onCopy={copyToClipboard}
       />
       <CardSection
-        title="Corrected"
-        content={entry.corrected ?? ""}
+        title="Definition"
+        content={entry.definition ?? ""}
         onCopy={copyToClipboard}
       />
-      {entry.corrections?.length > 0 && (
+      {entry.examples?.length > 0 && (
         <CardSection
-          title="Explanations"
-          content={entry.corrections}
+          title="Examples"
+          content={entry.examples}
           variant="list"
-          formatListForCopy={(corrections) =>
+          formatListForCopy={(examples) =>
             "Original: " +
             entry.input +
             "\n\n" +
-            "Corrected: " +
-            entry.corrected +
-            "\n\n" +
-            corrections
+            "Examples: " +
+            entry.examples
               .map(
-                (correction) =>
-                  "- " + correction.correction + "\n" + correction.explanation
+                (example) =>
+                  "- " + example
               )
               .join("\n")
           }

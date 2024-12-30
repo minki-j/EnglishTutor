@@ -128,7 +128,11 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
             } else if (response.type === "vocabulary") {
               updatedEntries[existingEntryIndex] = {
                 ...(updatedEntries[existingEntryIndex] as IVocabulary),
-                ...response,
+                examples: [
+                  ...((updatedEntries[existingEntryIndex] as IVocabulary)
+                    .examples || []),
+                  response.example,
+                ],
               } as IVocabulary;
             } else if (response.type === "breakdown") {
               updatedEntries[existingEntryIndex] = {
@@ -163,6 +167,10 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         });
         setIsLoading(false);
         websocket.close();
+      };
+
+      websocket.onclose = () => {
+        setIsLoading(false);
       };
 
       websocket.send(
