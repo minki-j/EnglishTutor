@@ -4,7 +4,7 @@ export interface IBreakdown {
   id: string;
   type: "breakdown";
   userId: string;
-  sentence: string;
+  input: string;
   breakdown: string;
   createdAt: Date;
 }
@@ -18,7 +18,7 @@ const BreakdownSchema = new mongoose.Schema<IBreakdown>({
     type: String,
     required: true,
   },
-  sentence: {
+  input: {
     type: String,
     required: true,
   },

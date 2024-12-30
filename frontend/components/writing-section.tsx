@@ -8,11 +8,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 
-import type { WritingEntry } from "@/types/writingEntry";
 import { ResultCard } from "./result-card";
 
+import { ICorrection } from "@/models/Correction";
+import { IVocabulary } from "@/models/Vocabulary";
+import { IBreakdown } from "@/models/Breakdown";
+
 export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
-  const [entries, setEntries] = useState<WritingEntry[]>([]);
+  const [entries, setEntries] = useState<
+    ICorrection[] | IVocabulary[] | IBreakdown[]
+  >([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -42,9 +47,13 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
     let websocket: WebSocket;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      const websocketUrl =
-        "wss://" + backendUrl?.split("://")[1] + "ws/tutor";
-      websocket = new WebSocket(websocketUrl);
+      // if backendurl is https, use wss, otherwise use ws
+      const websocketProtocol = backendUrl?.startsWith("https")
+        ? "wss://"
+        : "ws://";
+      websocket = new WebSocket(
+        websocketProtocol + backendUrl?.split("://")[1] + "ws/tutor"
+      );
     } catch (error) {
       console.error("Failed to connect to WebSocket:", error);
       toast({
@@ -57,7 +66,6 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       return;
     }
 
-
     try {
       // Wait for the connection to open
       await Promise.race([
@@ -65,14 +73,15 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           websocket.onopen = resolve;
           websocket.onerror = reject;
         }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Connection timeout')), 5000)
-        )
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Connection timeout")), 5000)
+        ),
       ]);
 
       // Set up message handler
       websocket.onmessage = (event) => {
         const response = JSON.parse(event.data);
+        console.log("======= response =======\n", response);
 
         if (response.error) {
           toast({
@@ -81,39 +90,55 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
             variant: "destructive",
             duration: 4000,
           });
+          setIsLoading(false);
           return;
         }
 
-        // TODO : use the correct type
-        const newEntry: WritingEntry = {
-          input: currentText,
-          createdAt: new Date(),
-          ...response,
-        };
-
         setEntries((prev) => {
           const existingEntryIndex = prev.findIndex(
-            (entry) => entry.id === newEntry.id
+            (entry) => entry.id === response.id
           );
+
           if (existingEntryIndex == -1) {
-            return [newEntry, ...prev];
+            return [
+              {
+                id: response.id.toString(),
+                type: response.type,
+                userId: response.userId,
+                input: currentText,
+                createdAt: new Date(),
+                ...response,
+              } as ICorrection | IVocabulary | IBreakdown,
+              ...prev
+            ];
           } else {
-            // Update existing entry, preserving original fields
+            // prev is immutable, so we need to create a new array
             const updatedEntries = [...prev];
-            if (response.correction) {
+
+            // Update existing entry, preserving original fields
+            if (response.type === "correction") {
+              const correctionEntry = updatedEntries[
+                existingEntryIndex
+              ] as ICorrection;
               updatedEntries[existingEntryIndex] = {
-                ...updatedEntries[existingEntryIndex], // Keep existing fields
+                ...correctionEntry,
                 corrections: [
-                  ...(updatedEntries[existingEntryIndex].corrections || []),
+                  ...(correctionEntry.corrections || []),
                   response.correction,
-                ], // append with new corrections
-              };
-            } else {
+                ],
+              } as ICorrection;
+            } else if (response.type === "vocabulary") {
               updatedEntries[existingEntryIndex] = {
-                ...updatedEntries[existingEntryIndex],
-                ...newEntry,
-              };
+                ...(updatedEntries[existingEntryIndex] as IVocabulary),
+                ...response,
+              } as IVocabulary;
+            } else if (response.type === "breakdown") {
+              updatedEntries[existingEntryIndex] = {
+                ...(updatedEntries[existingEntryIndex] as IBreakdown),
+                ...response,
+              } as IBreakdown;
             }
+
             return updatedEntries;
           }
         });
@@ -141,7 +166,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         setIsLoading(false);
         websocket.close();
       };
-      
+
       websocket.send(
         JSON.stringify({
           type: type,
@@ -233,7 +258,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       </Card>
 
       {entries.length > 0 &&
-        entries.map((entry) => <ResultCard entry={entry}/>)}
+        entries.map((entry) => <ResultCard entry={entry} key={entry.id} />)}
     </div>
   );
 }

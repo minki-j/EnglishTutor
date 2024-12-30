@@ -67,7 +67,7 @@ export function ResultCard({ entry }: Props) {
   };
 
   return (
-    <Card className={`p-6 relative`} key={entry.id}>
+    <Card className={`p-6 relative`}>
       <div className="flex justify-between items-stretch">
         {cardContent(entry)}
         <div className="flex-[0.1] flex flex-col justify-between items-end">

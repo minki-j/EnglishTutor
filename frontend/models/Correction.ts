@@ -9,18 +9,22 @@ export interface ICorrection {
   id: string;
   type: "correction";
   userId: string;
-  originalText: string;
+  input: string;
   correctedText: string;
   corrections: ICorrectionItem[];
   createdAt: Date;
 }
 
 const CorrectionSchema = new mongoose.Schema<ICorrection>({
+  type: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
     required: true,
   },
-  originalText: {
+  input: {
     type: String,
     required: true,
   },

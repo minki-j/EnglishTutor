@@ -24,6 +24,11 @@ export default async function HistoryPage({
   await connectDB();
   const [corrections, totalCount] = await Promise.all([
     CorrectionModel.find({ userId: session.user?.id })
+      .select({ 
+        id: { $toString: '$_id' },
+        ...Object.fromEntries(Object.keys(CorrectionModel.schema.paths).map(key => [key, 1])),
+        _id: 0
+      })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -33,25 +38,14 @@ export default async function HistoryPage({
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  const formattedCorrections = corrections.map((correction: any): WritingEntry => ({
-    id: correction._id.toString(),
-    type: correction.type,
-    input: correction.originalText,
-    corrected: correction.correctedText,
-    corrections: correction.corrections.map((c: any) => ({
-      ...c,
-      _id: c._id?.toString()
-    })),
-    createdAt: correction.createdAt,
-  }));
 
   return (
     <div className="max-w-2xl mx-auto py-8">
       <div className="space-y-4">
-        {formattedCorrections.map((correction) => (
+        {corrections.map((correction) => (
           <ResultCard key={correction.id} entry={correction} />
         ))}
-        {formattedCorrections.length === 0 && (
+        {corrections.length === 0 && (
           <p className="text-muted-foreground">No history found.</p>
         )}
       </div>

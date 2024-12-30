@@ -15,6 +15,7 @@ from app.models import CorrectionItem
 
 def correct_input(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: correct_input")
+    
     corrected_input = (
         ChatPromptTemplate.from_template(
             """You are a experienced ESL tutor. Improve the following text: {input}
@@ -30,14 +31,15 @@ def correct_input(state: OverallState, writer: StreamWriter):
     )
 
     # Stream the output via StreamWriter
-    writer({"corrected": corrected_input})
+    writer({"correctedText": corrected_input})
 
     return {
-        "corrected": corrected_input,
+        "correctedText": corrected_input,
     }
 
 def generate_explanation(state: OverallState, writer: StreamWriter):
-    print("\n>>> Command: generate_explanation")
+    print("\n>>> NODE: generate_explanation")
+    
     class Goto(str, Enum):
         END = "__end__"
         GENERATE_EXPLANATION = "generate_explanation"
@@ -52,7 +54,7 @@ def generate_explanation(state: OverallState, writer: StreamWriter):
         ChatPromptTemplate.from_template(
             """You are a experienced ESL tutor. Your student asked you to look at their Enlglish expression or writing and improve it.
             Here is their original: {input}
-            Here it your corrected version: {corrected}
+            Here it your corrected version: {correctedText}
             
             Now you have to give explanations for your corrections one by one. And here is the explanations that you have already given: {corrections}
             
@@ -62,7 +64,7 @@ def generate_explanation(state: OverallState, writer: StreamWriter):
     ).invoke(
         {
             "input": state.input,
-            "corrected": state.corrected,
+            "correctedText": state.correctedText,
             "corrections": "\n".join(
                 [f"{item.correction}: {item.explanation}" for item in state.corrections]
             ),
@@ -85,16 +87,14 @@ g.add_edge(n(correct_input), n(generate_explanation))
 g.add_node(n(generate_explanation), generate_explanation)
 
 
-
-
-# You are an English teacher helping non-native speakers improve their English. 
+# You are an English teacher helping non-native speakers improve their English.
 # Provide corrections and explanations in a clear, supportive manner.
 
-# --- 
+# ---
 
 # Always respond with JSON with markdown formatting for strings in the following format:
 # {
-#   "corrected": "string of corrected text",
+#   "correctedText": "string of corrected text",
 #   "corrections": [{"correction": "string explaining each correction", "explanation": "string explaining each correction"}]
 # }
 
@@ -109,27 +109,27 @@ g.add_node(n(generate_explanation), generate_explanation)
 # Here are examples:
 
 # user's text: "I go to the store every day."
-# corrected: "This sentence is grammatically correct and sounds natural. Great job!"
+# correctedText: "This sentence is grammatically correct and sounds natural. Great job!"
 # corrections: []
 
 # user's text: "What do you usually do within one hours before going to the bed?"
-# corrected: "What do you usually do one hour before going to bed?"
+# correctedText: "What do you usually do one hour before going to bed?"
 # corrections: [{
 #   "drop \`within\`": "\`Within one hour before going to bed\` would mean at any point inside the one-hour time frame before bedtime, not focusing on the full period. This wording could be used if you wanted to know about something that happens at some random or unspecified time during that hour, like:
 # \`Do you drink water within one hour before bed?\`
 # This implies it could happen at the 30-minute mark, the 10-minute mark, or just before bed—anywhere inside that hour.
 
-# However, your question is about someone's routine during the entire hour before bedtime. You're asking about everything they usually do in that specific period of time leading up to sleep."}, 
+# However, your question is about someone's routine during the entire hour before bedtime. You're asking about everything they usually do in that specific period of time leading up to sleep."},
 #   {"one hours → one hour": "One hour is singular"}]
 
 # user's text: "I don't have an access to internet."
-# corrected: "I don't have access to the internet."
-# corrections: [{"an access → access": "The word \`access\` is an uncountable noun in this context, meaning you cannot use "an" before it. "}, 
+# correctedText: "I don't have access to the internet."
+# corrections: [{"an access → access": "The word \`access\` is an uncountable noun in this context, meaning you cannot use "an" before it. "},
 #   {"internet → the internet": "The internet is a specific, unique entity, so we use the definite article \`the\` before it. It refers to the global network of computers, making it a singular, identifiable thing."}]
 
 
 # user's text: "I don't want to no five minute too long waiting."
-# corrected: "Can you clarify what you wanted to say? I don't understand what you mean by \`no five minutes\`. Does it mean that you don't want to wait more than 5 minutes or  you don't have 5 minutes to wait?"
+# correctedText: "Can you clarify what you wanted to say? I don't understand what you mean by \`no five minutes\`. Does it mean that you don't want to wait more than 5 minutes or  you don't have 5 minutes to wait?"
 # corrections: []
 
 # ---
@@ -137,4 +137,3 @@ g.add_node(n(generate_explanation), generate_explanation)
 # Important!!
 # - Do not make corrections with capitalization and commas unless it's absolutely necessary.
 # - Even if you make corrections for capitalization and commas, don't put them in the corrections array.
-

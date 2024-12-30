@@ -1,6 +1,3 @@
-from bson import ObjectId
-from datetime import datetime
-
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
@@ -12,7 +9,8 @@ from app.workflows.breakdown import g as breakdown_graph
 
 from app.db.mongodb import ping_mongodb, main_db
 from app.utils.compile_graph import compile_graph_with_async_checkpointer
-from app.models import CorrectionItem
+from app.models import CorrectionItem, Correction, Vocabulary, Breakdown
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,7 +23,10 @@ app = FastAPI(title="English Tutor API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://backend-production-c134.up.railway.app"],
+    allow_origins=[
+        "http://localhost:3000",
+        "https://backend-production-c134.up.railway.app",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +36,15 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Service is running"}
+
+@app.get("/correction", response_model=Correction)
+async def get_corrections():
+    return Correction(
+        userId="123",
+        input="Hello, world!",
+        correctedText="Hello, world!",
+        corrections=[CorrectionItem(correction="Hello, world!", explanation="Hello, world!")],
+    )
 
 
 @app.websocket("/ws/tutor")
@@ -61,45 +71,62 @@ async def tutor_ws(websocket: WebSocket):
             return
 
         if type == "correction":
-            workflow = await compile_graph_with_async_checkpointer(correction_graph, type)
+            graph = correction_graph
+            result = Correction(
+                userId=user_id,
+                input=input,
+            )
         elif type == "vocabulary":
-            workflow = await compile_graph_with_async_checkpointer(vocabulary_graph, type)
+            graph = vocabulary_graph
+            result = Vocabulary(
+                userId=user_id,
+                input=input,
+            )
         elif type == "breakdown":
-            workflow = await compile_graph_with_async_checkpointer(breakdown_graph, type)
+            graph = breakdown_graph
+            result = Breakdown(
+                userId=user_id,
+                input=input,
+            )
         else:
             raise HTTPException(status_code=400, detail="Invalid type")
 
-        correction_id = ObjectId()
-        correction_id_str = str(correction_id)
+        workflow = await compile_graph_with_async_checkpointer(graph, type)
 
-        config = {"configurable": {"thread_id": correction_id_str}}
-        result = {
-            "_id": correction_id,
-            "userId": user_id,
-            "originalText": input,
-            "correctedText": "",
-            "corrections": [],
-            "createdAt": datetime.now(),
-        }
+        result_id = result.id
+        result_id_str = str(result_id)
+        config = {"configurable": {"thread_id": result_id_str}}
 
-        # Stream the intermediate results from the workflow via websocket connection
+        # Stream the intermediate results
         async for data in workflow.astream(
-            {"input": input, "thread_id": correction_id_str},
+            {"input": input, "thread_id": result_id_str},
             stream_mode="custom",
             config=config,
         ):
+            print("\n Graph stream: ", data)
             # Serialize CorrectionItem
             if "correction" in data and isinstance(data["correction"], CorrectionItem):
+                result.corrections.append(data["correction"])
                 data["correction"] = data["correction"].model_dump()
-                result["corrections"].append(data["correction"])
-            elif "corrected" in data:
-                result["correctedText"] = data["corrected"]
             else:
-                result.update(data)
+                for key, value in data.items():
+                    if hasattr(result, key):
+                        setattr(result, key, value)
 
-            await websocket.send_json({"id": correction_id_str, "type": type, **data})
+            print("\n >>> Send data\n", data)
+            await websocket.send_json(
+                {
+                    "id": result_id_str,
+                    "type": type,
+                    **data,
+                }
+            )
+            print("result: ", result)
 
-        await main_db.corrections.insert_one(result)
+        # Convert Pydantic model to dictionary before inserting
+        result_dict = result.model_dump()
+        print(f"==>> save to MONGODB: {result_dict}")
+        await main_db.corrections.insert_one(result_dict)
 
     except WebSocketDisconnect:
         print("Client disconnected")

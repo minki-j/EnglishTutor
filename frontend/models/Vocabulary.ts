@@ -4,7 +4,7 @@ export interface IVocabulary {
   id: string;
   type: "vocabulary";
   userId: string;
-  vocabulary: string;
+  input: string;
   definition: string;
   examples: Array<{
     example: string;
@@ -13,11 +13,15 @@ export interface IVocabulary {
 }
 
 const VocabularySchema = new mongoose.Schema<IVocabulary>({
+  type: {
+    type: String,
+    required: true,
+  },
   userId: {
     type: String,
     required: true,
   },
-  vocabulary: {
+  input: {
     type: String,
     required: true,
   },
