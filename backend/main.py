@@ -125,8 +125,8 @@ async def tutor_ws(websocket: WebSocket):
 
         # Convert Pydantic model to dictionary before inserting
         result_dict = result.model_dump()
-        print(f"==>> save to MONGODB: {result_dict}")
-        await main_db.corrections.insert_one(result_dict)
+        result_dict['_id'] = result_dict.pop('id')
+        await main_db.results.insert_one(result_dict)
 
     except WebSocketDisconnect:
         print("Client disconnected")

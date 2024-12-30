@@ -14,10 +14,10 @@ import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
 
+type Entry = ICorrection | IVocabulary | IBreakdown;
+
 export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
-  const [entries, setEntries] = useState<
-    ICorrection[] | IVocabulary[] | IBreakdown[]
-  >([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [currentText, setCurrentText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -94,7 +94,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           return;
         }
 
-        setEntries((prev) => {
+        setEntries((prev: Entry[]) => {
           const existingEntryIndex = prev.findIndex(
             (entry) => entry.id === response.id
           );
@@ -103,13 +103,11 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
             return [
               {
                 id: response.id.toString(),
-                type: response.type,
-                userId: response.userId,
                 input: currentText,
                 createdAt: new Date(),
                 ...response,
-              } as ICorrection | IVocabulary | IBreakdown,
-              ...prev
+              } as Entry,
+              ...prev,
             ];
           } else {
             // prev is immutable, so we need to create a new array

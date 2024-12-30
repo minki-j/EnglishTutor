@@ -2,9 +2,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { ResultCard } from "@/components/result-card";
 import { redirect } from "next/navigation";
-import connectDB from "@/lib/mongodb";
-import { CorrectionModel } from "@/models/Correction";
-import type { WritingEntry } from "@/types/writingEntry";
+import client from "@/lib/mongodb";
 
 export default async function HistoryPage({
   searchParams,
@@ -21,20 +19,26 @@ export default async function HistoryPage({
   const limit = 10;
   const skip = (page - 1) * limit;
 
-  await connectDB();
+  const db = client.db("test");
+  const collection = db.collection('results');
+
+  console.time('MongoDB Query');
   const [corrections, totalCount] = await Promise.all([
-    CorrectionModel.find({ userId: session.user?.id })
-      .select({ 
-        id: { $toString: '$_id' },
-        ...Object.fromEntries(Object.keys(CorrectionModel.schema.paths).map(key => [key, 1])),
-        _id: 0
-      })
+    collection
+      .find({ userId: session.user?.id })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean(),
-    CorrectionModel.countDocuments({ userId: session.user?.id }),
+      .toArray(),
+    collection.countDocuments({ userId: session.user?.id }),
   ]);
+  console.timeEnd('MongoDB Query');
+
+  const formattedCorrections = corrections.map((correction) => ({
+    ...correction,
+    id: correction._id.toString(),
+    _id: undefined
+  }));
 
   const totalPages = Math.ceil(totalCount / limit);
 
@@ -42,10 +46,10 @@ export default async function HistoryPage({
   return (
     <div className="max-w-2xl mx-auto py-8">
       <div className="space-y-4">
-        {corrections.map((correction) => (
+        {formattedCorrections.map((correction) => (
           <ResultCard key={correction.id} entry={correction} />
         ))}
-        {corrections.length === 0 && (
+        {formattedCorrections.length === 0 && (
           <p className="text-muted-foreground">No history found.</p>
         )}
       </div>

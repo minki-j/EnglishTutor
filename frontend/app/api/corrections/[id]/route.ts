@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import connectDB from "@/lib/mongodb";
-import { CorrectionModel } from "@/models/Correction";
+import client from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 export async function DELETE(
   req: Request,
@@ -15,18 +15,19 @@ export async function DELETE(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    await connectDB();
+    const db = client.db("test");
+    const collection = db.collection('results');
 
-    const correction = await CorrectionModel.findOne({
-      _id: params.id,
+    const result = await collection.findOne({
+      _id: new ObjectId(params.id),
       userId: session.user?.id,
     });
-
-    if (!correction) {
+    
+    if (!result) {
       return new NextResponse("Correction not found", { status: 404 });
     }
 
-    await CorrectionModel.findByIdAndDelete(params.id);
+    await collection.deleteOne({ _id: new ObjectId(params.id) });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
