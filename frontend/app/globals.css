@@ -80,3 +80,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+[data-color-mode*="dark"] {
+  --md-bg-color: hsl(var(--background));
+  --md-border-color: hsl(var(--border));
+}
+
+.w-md-editor {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  height: 100% !important;
+  display: block !important;
+  min-height: 0px !important;
+}
+
+.w-md-editor-content {
+  height: 100% !important;
+}
+
+body .w-md-editor-text-pre > code,
+body .w-md-editor-text-input {
+  height: 100% !important;
+  font-size: 23px !important;
+  line-height: 27px !important;
+}

@@ -13,6 +13,7 @@ import { ResultCard } from "./result-card";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
+import MDEditor from '@uiw/react-md-editor';
 
 type Entry = ICorrection | IVocabulary | IBreakdown;
 
@@ -207,15 +208,21 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   return (
     <div className="space-y-8">
       <Card className="p-6">
-        <Textarea
-          ref={textareaRef}
-          placeholder="Enter your text here..."
+        <MDEditor
           value={currentText}
-          onChange={(e) => setCurrentText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="min-h-[200px] mb-4 text-lg"
-          disabled={isLoading}
-          autoFocus={autoFocus}
+          onChange={(value) => setCurrentText(value || '')}
+          preview="edit"
+          hideToolbar={true}
+          height="100%"
+          className="mb-4 min-h-[200px]"
+          textareaProps={{
+            placeholder: "Enter your text here...",
+            onKeyDown: handleKeyDown,
+            disabled: isLoading,
+            autoFocus: autoFocus,
+            style: { height: '100%' },
+
+          }}
         />
         <div className="grid grid-cols-3 gap-4">
           <Button
