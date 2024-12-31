@@ -26,9 +26,8 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
         {title}
       </h3>
       <div
-        className={`group relative rounded-sm p-1 -m-1 ${
-          onCopy ? "cursor-pointer hover:bg-muted/50" : ""
-        }`}
+        className={`group relative rounded-sm p-1 -m-1 ${onCopy ? "cursor-pointer hover:bg-muted/50" : ""
+          }`}
         onClick={onCopy ? handleCopy : undefined}
       >
         {variant === "default" ? (
@@ -41,11 +40,11 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
               <li key={index}>
                 <div className="pr-8">
                   <p className="font-medium">
-                    // TODO: improve this hard coded solution
+                    {/* TODO: improve this hard coded solution */}
                     {typeof item === 'string' ? item : item.correction}
                   </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    // TODO: improve this hard coded solution
+                    {/* TODO: improve this hard coded solution */}
                     {typeof item === 'string' ? '' : item.explanation}
                   </p>
                 </div>
