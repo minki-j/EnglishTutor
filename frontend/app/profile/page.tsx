@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import connectDB from "@/lib/mongodb";
+import { connectDB } from "@/lib/mongodb"; 
 import User from "@/models/User";
 
 interface UserDocument {
@@ -20,7 +20,7 @@ export default async function HistoryPage() {
     redirect("/");
   }
 
-  await connectDB();
+  await connectDB(); 
   const user = (await User.findOne({
     googleId: session.user?.id,
   }).lean()) as unknown as UserDocument;

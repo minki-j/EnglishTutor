@@ -14,9 +14,11 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function connect() {
+async function connectDB() {
   try {
+    if (!client.connect) return;
     await client.connect();
+    await client.db("admin").command({ ping: 1 });
     console.log("Successfully connected to MongoDB.");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
@@ -24,6 +26,5 @@ async function connect() {
   }
 }
 
-connect().catch(console.error);
-
+export { connectDB };
 export default client;

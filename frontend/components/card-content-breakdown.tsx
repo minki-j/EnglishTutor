@@ -15,11 +15,11 @@ export function CardContentBreakdown({ entry, copyToClipboard }: Props) {
         onCopy={copyToClipboard}
       />
       <CardSection
-        title="Corrected"
-        content={entry.corrected ?? ""}
+        title="Breakdown"
+        content={entry.breakdown ?? ""}
         onCopy={copyToClipboard}
       />
-      {entry.corrections?.length > 0 && (
+      {/* {entry.corrections?.length > 0 && (
         <CardSection
           title="Explanations"
           content={entry.corrections}
@@ -40,7 +40,7 @@ export function CardContentBreakdown({ entry, copyToClipboard }: Props) {
           }
           onCopy={copyToClipboard}
         />
-      )}
+      )} */}
     </div>
   );
 }

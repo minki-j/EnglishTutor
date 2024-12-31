@@ -3,6 +3,9 @@ import { authOptions } from "@/lib/auth";
 import { ResultCard } from "@/components/result-card";
 import { redirect } from "next/navigation";
 import client from "@/lib/mongodb";
+import { ICorrection } from "@/models/Correction";
+import { IVocabulary } from "@/models/Vocabulary";
+import { IBreakdown } from "@/models/Breakdown";
 
 export default async function HistoryPage({
   searchParams,
@@ -34,11 +37,37 @@ export default async function HistoryPage({
   ]);
   console.timeEnd('MongoDB Query');
 
-  const formattedCorrections = corrections.map((correction) => ({
-    ...correction,
-    id: correction._id.toString(),
-    _id: undefined
-  }));
+  const formattedCorrections = corrections.map((doc) => {
+    const baseFields = {
+      id: doc._id.toString(),
+      type: doc.type,
+      userId: doc.userId,
+      input: doc.input,
+      createdAt: doc.createdAt
+    } as const;
+
+    switch (doc.type) {
+      case "vocabulary":
+        return {
+          ...baseFields,
+          definition: doc.definition!,
+          examples: doc.examples!
+        } as IVocabulary;
+      case "correction":
+        return {
+          ...baseFields,
+          correctedText: doc.correctedText!,
+          corrections: doc.corrections!
+        } as ICorrection;
+      case "breakdown":
+        return {
+          ...baseFields,
+          breakdown: doc.breakdown!
+        } as IBreakdown;
+      default:
+        throw new Error(`Unknown type: ${doc.type}`);
+    }
+  });
 
   const totalPages = Math.ceil(totalCount / limit);
 

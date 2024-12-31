@@ -40,9 +40,13 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
             {(content as ICorrectionItem[] | string[]).map((item, index) => (
               <li key={index}>
                 <div className="pr-8">
-                  <p className="font-medium">{item?.correction || ""}</p>
+                  <p className="font-medium">
+                    // TODO: improve this hard coded solution
+                    {typeof item === 'string' ? item : item.correction}
+                  </p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {item?.explanation ||item}
+                    // TODO: improve this hard coded solution
+                    {typeof item === 'string' ? '' : item.explanation}
                   </p>
                 </div>
               </li>

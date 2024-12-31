@@ -24,14 +24,14 @@ export function CardContentCorrection({ entry, copyToClipboard }: Props) {
           title="Explanations"
           content={entry.corrections}
           variant="list"
-          formatListForCopy={(corrections) =>
+          formatListForCopy={() =>
             "Original: " +
             entry.input +
             "\n\n" +
             "Corrected: " +
             entry.correctedText +
             "\n\n" +
-            corrections
+            entry.corrections
               .map(
                 (correction) =>
                   "- " + correction.correction + "\n" + correction.explanation
