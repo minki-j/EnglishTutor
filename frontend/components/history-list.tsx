@@ -5,15 +5,21 @@ import { ResultCard } from "./result-card";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
+import { HistorySkeleton } from "./history-skeleton"; // assuming HistorySkeleton is defined in this file
 
 type Entry = ICorrection | IVocabulary | IBreakdown;
 
 interface HistoryListProps {
   initialEntries: Entry[];
+  isLoading?: boolean;
 }
 
-export function HistoryList({ initialEntries }: HistoryListProps) {
+export function HistoryList({ initialEntries, isLoading = false }: HistoryListProps) {
   const [entries, setEntries] = useState<Entry[]>(initialEntries);
+
+  if (isLoading) {
+    return <HistorySkeleton />;
+  }
 
   const handleDelete = (id: string) => {
     setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== id));

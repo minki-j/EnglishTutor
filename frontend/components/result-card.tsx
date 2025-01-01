@@ -1,8 +1,9 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Trash2, Loader2 } from "lucide-react";
 import { Card } from "./ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { useState } from "react";
 
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
@@ -20,6 +21,7 @@ type Props = {
 
 export function ResultCard({ entry, onDelete }: Props) {
   const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -38,6 +40,9 @@ export function ResultCard({ entry, onDelete }: Props) {
   };
 
   const handleDelete = async (id: string) => {
+    if (isDeleting) return;
+    
+    setIsDeleting(true);
     try {
       const response = await fetch(`/api/corrections/${id}`, {
         method: "DELETE",
@@ -61,6 +66,8 @@ export function ResultCard({ entry, onDelete }: Props) {
         variant: "destructive",
         duration: 2000,
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -90,10 +97,15 @@ export function ResultCard({ entry, onDelete }: Props) {
           </span>
           <button
             onClick={() => handleDelete(entry.id)}
-            className="text-muted-foreground hover:text-destructive transition-colors p-5 -m-5"
+            className="text-muted-foreground hover:text-destructive transition-colors p-5 -m-5 disabled:cursor-not-allowed"
             aria-label="Delete correction"
+            disabled={isDeleting}
           >
-            <Trash2 className="h-4 w-4" />
+            {isDeleting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
           </button>
         </div>
       </div>

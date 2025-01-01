@@ -1,6 +1,7 @@
 import { Copy } from "lucide-react";
 import { ICorrectionItem } from "@/models/Correction";
 import ReactMarkdown from 'react-markdown';
+import { Spinner } from "./ui/spinner";
 
 interface Props {
   title: string;
@@ -32,25 +33,33 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
       >
         {variant === "default" ? (
           <div className="text-foreground/90 pr-8">
-            <ReactMarkdown>{content as string}</ReactMarkdown>
+            {!content ? (
+              <Spinner />
+            ) : (
+              <ReactMarkdown>{content as string}</ReactMarkdown>
+            )}
           </div>
         ) : (
-          <ul className="list-disc pl-4 space-y-1">
-            {(content as ICorrectionItem[] | string[]).map((item, index) => (
-              <li key={index}>
-                <div className="pr-8">
-                  <p className="font-medium">
-                    {/* TODO: improve this hard coded solution */}
-                    {typeof item === 'string' ? item : item.correction}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {/* TODO: improve this hard coded solution */}
-                    {typeof item === 'string' ? '' : item.explanation}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
+          !content || content?.length === 0 ? (
+              <Spinner />
+          ) : (
+            <ul className="list-disc pl-4 space-y-1">
+              {(content as ICorrectionItem[] | string[]).map((item, index) => (
+                <li key={index}>
+                  <div className="pr-8">
+                    <p className="font-medium">
+                      {/* TODO: improve this hard coded solution */}
+                      {typeof item === 'string' ? item : item.correction}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {/* TODO: improve this hard coded solution */}
+                      {typeof item === 'string' ? '' : item.explanation}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
         )}
         {onCopy && (
           <div className="absolute right-2 top-2">

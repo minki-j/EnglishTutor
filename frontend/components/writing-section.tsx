@@ -34,6 +34,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   const processText = async (
     type: "correction" | "vocabulary" | "breakdown"
   ) => {
+    setIsLoading(true);
+
     if (!currentText.trim()) {
       toast({
         title: "Error",
@@ -43,8 +45,21 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       });
       return;
     }
+    setEntries((prev: Entry[]) => {
+      return [
+        {
+          id: "default_entry_id",
+          input: currentText,
+          createdAt: new Date(),
+          type: type,
+        } as Entry,
+        ...prev,
+      ];
+    });
 
-    setIsLoading(true);
+    setCurrentText("");
+    setIsLoading(false);
+
     let websocket: WebSocket;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -80,9 +95,9 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       ]);
 
       // Set up message handler
-      websocket.onmessage = (event) => {
+      websocket.onmessage = async (event) => {
         const response = JSON.parse(event.data);
-        // console.log("======= response =======\n", response);
+        console.log("======= response =======\n", response);
 
         if (response.error) {
           toast({
@@ -97,19 +112,16 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
 
         setEntries((prev: Entry[]) => {
           const existingEntryIndex = prev.findIndex(
-            (entry) => entry.id === response.id
+            (entry) =>
+              (entry.id === response.id || entry.id === "default_entry_id")
           );
 
-          if (existingEntryIndex == -1) {
-            return [
-              {
-                id: response.id.toString(),
-                input: currentText,
-                createdAt: new Date(),
-                ...response,
-              } as Entry,
-              ...prev,
-            ];
+          if (prev[existingEntryIndex].id === "default_entry_id") {
+            return prev.map((entry, index) =>
+              index === existingEntryIndex
+                ? { ...entry, ...response }
+                : entry
+            );
           } else {
             // prev is immutable, so we need to create a new array
             const updatedEntries = [...prev];
@@ -170,7 +182,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         websocket.close();
       };
 
-      websocket.onclose = () => {
+      websocket.onclose = async () => {
         setIsLoading(false);
       };
 
