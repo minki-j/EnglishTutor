@@ -15,9 +15,10 @@ import { CardContentBreakdown } from "./card-content-breakdown";
 
 type Props = {
   entry: ICorrection | IVocabulary | IBreakdown;
+  onDelete?: (id: string) => void;
 };
 
-export function ResultCard({ entry }: Props) {
+export function ResultCard({ entry, onDelete }: Props) {
   const { toast } = useToast();
 
   const copyToClipboard = async (text: string) => {
@@ -46,13 +47,20 @@ export function ResultCard({ entry }: Props) {
         throw new Error("Failed to delete correction");
       }
 
-      window.location.reload();
       toast({
         description: "Correction deleted successfully",
         duration: 2000,
       });
+      
+      // Call the onDelete callback to update parent state
+      onDelete?.(id);
     } catch (error) {
       console.error("Error deleting correction:", error);
+      toast({
+        description: "Failed to delete correction",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 

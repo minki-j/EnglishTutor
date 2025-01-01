@@ -82,7 +82,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       // Set up message handler
       websocket.onmessage = (event) => {
         const response = JSON.parse(event.data);
-        console.log("======= response =======\n", response);
+        // console.log("======= response =======\n", response);
 
         if (response.error) {
           toast({

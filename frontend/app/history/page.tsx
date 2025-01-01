@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { ResultCard } from "@/components/result-card";
+import { HistoryList } from "@/components/history-list";
 import { redirect } from "next/navigation";
 import client from "@/lib/mongodb";
 import { ICorrection } from "@/models/Correction";
@@ -13,7 +14,7 @@ export default async function HistoryPage({
   searchParams: { page?: string };
 }) {
   const session = await getServerSession(authOptions);
-  
+
   if (!session) {
     redirect("/");
   }
@@ -74,15 +75,7 @@ export default async function HistoryPage({
 
   return (
     <div className="max-w-2xl mx-auto py-8">
-      <div className="space-y-4">
-        {formattedCorrections.map((correction) => (
-          <ResultCard key={correction.id} entry={correction} />
-        ))}
-        {formattedCorrections.length === 0 && (
-          <p className="text-muted-foreground">No history found.</p>
-        )}
-      </div>
-
+      <HistoryList initialEntries={formattedCorrections} />
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-8">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(
@@ -90,11 +83,10 @@ export default async function HistoryPage({
               <a
                 key={pageNum}
                 href={`/history?page=${pageNum}`}
-                className={`px-4 py-2 border rounded ${
-                  pageNum === page
+                className={`px-4 py-2 border rounded ${pageNum === page
                     ? "bg-primary text-primary-foreground"
                     : "hover:bg-secondary"
-                }`}
+                  }`}
               >
                 {pageNum}
               </a>

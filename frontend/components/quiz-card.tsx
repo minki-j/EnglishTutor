@@ -23,8 +23,6 @@ export function CorrectionCard({ entry, key }: CorrectionCardProps) {
   const { toast } = useToast();
 
   const copyToClipboard = async (text: string) => {
-    console.log("copying to clipboard");
-
     try {
       await navigator.clipboard.writeText(text);
       toast({

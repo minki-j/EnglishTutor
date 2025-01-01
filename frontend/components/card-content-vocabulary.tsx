@@ -7,11 +7,10 @@ interface Props {
 }
 
 export function CardContentVocabulary({ entry, copyToClipboard }: Props) {
-  console.log("entry: ", entry);
   return (
     <div className="space-y-4 flex-[0.9]">
       <CardSection
-        title="Original"
+        title="Vocabulary"
         content={entry.input}
         onCopy={copyToClipboard}
       />
