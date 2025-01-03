@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Navigation } from '@/components/navigation';
 import { AuthProvider } from '@/components/auth-provider';
+import { Suspense } from 'react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,12 +29,28 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <div className="min-h-screen bg-background">
-              <Navigation />
-              <main className="container mx-auto px-4 py-8">
-                {children}
-              </main>
-            </div>
+            <Suspense
+              fallback={
+                <div className="min-h-screen bg-background animate-pulse">
+                  <div className="h-16 bg-muted" />
+                  <main className="container mx-auto px-4 py-8 space-y-4">
+                    <div className="h-8 w-[200px] bg-muted rounded" />
+                    <div className="h-32 bg-muted rounded" />
+                    <div className="grid gap-4">
+                      <div className="h-20 bg-muted rounded" />
+                      <div className="h-20 bg-muted rounded" />
+                    </div>
+                  </main>
+                </div>
+              }
+            >
+              <div className="min-h-screen bg-background">
+                <Navigation />
+                <main className="container mx-auto px-4 py-8">
+                  {children}
+                </main>
+              </div>
+            </Suspense>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>
