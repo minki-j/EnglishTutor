@@ -6,7 +6,7 @@ if (!uri) {
 }
 
 
-const client = new MongoClient(uri, {
+export const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
     strict: true,
@@ -14,7 +14,7 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function connectDB() {
+export async function connectDB() {
   try {
     if (!client.connect) return;
     await client.connect();
@@ -25,6 +25,3 @@ async function connectDB() {
     throw error;
   }
 }
-
-export { connectDB };
-export default client;

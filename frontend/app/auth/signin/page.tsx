@@ -7,10 +7,12 @@ import { signIn } from "next-auth/react";
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function SignIn() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -19,7 +21,16 @@ export default function SignIn() {
   }, [status, router]);
 
   const createTemporaryUser = async () => {
-    sessionStorage.setItem("temporary_user", "true");
+    await update({
+      user: true,
+    });
+    
+    toast({
+      variant: "destructive",
+      title: "Using Temporary Account",
+      description: "Your usage history won't be saved. Sign in with Google to save your progress.",
+      duration: 5000,
+    });
     router.push("/");
   };
 
@@ -44,7 +55,8 @@ export default function SignIn() {
             </Button>
             <Button
               className="w-full bg-secondary text-secondary-foreground hover:text-secondary"
-              onClick={() => createTemporaryUser()}
+              onClick={() => signIn("temporary")}
+              // onClick={() => createTemporaryUser()}
             >
               Try first without sign in
             </Button>

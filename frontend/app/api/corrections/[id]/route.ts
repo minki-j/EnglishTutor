@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import client from "@/lib/mongodb";
+import { client } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
 export async function DELETE(
@@ -22,7 +22,7 @@ export async function DELETE(
       _id: new ObjectId(params.id),
       userId: session.user?.id,
     });
-    
+
     if (!result) {
       return new NextResponse("Correction not found", { status: 404 });
     }

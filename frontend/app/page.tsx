@@ -14,8 +14,8 @@ export default function Home() {
       </div>
     );
   }
-  
-  const isTemporaryUser = sessionStorage.getItem("temporary_user") === "true";
+
+  const isTemporaryUser = session?.user?.name === "Temporary User";
 
   if (status === "unauthenticated" && !isTemporaryUser) {
     redirect("/auth/signin");

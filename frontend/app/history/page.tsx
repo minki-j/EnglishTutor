@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { MongoError } from "mongodb";
 
 import { authOptions } from "@/lib/auth";
-import client from "@/lib/mongodb";
+import { client } from "@/lib/mongodb";
 
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
@@ -97,9 +97,9 @@ export default async function HistoryPage({
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(num => {
                   // Show first page, last page, current page, and pages around current page
-                  return num === 1 || 
-                         num === totalPages || 
-                         Math.abs(num - page) <= 1;
+                  return num === 1 ||
+                    num === totalPages ||
+                    Math.abs(num - page) <= 1;
                 })
                 .map((pageNum, index, array) => {
                   // Add ellipsis when there are gaps
@@ -144,7 +144,7 @@ export default async function HistoryPage({
         <div className="bg-destructive/15 text-destructive p-4 rounded-md">
           <h2 className="font-semibold">Error loading history</h2>
           <p className="text-sm mt-1">
-            {error instanceof MongoError 
+            {error instanceof MongoError
               ? "Failed to connect to the database. Please try again later."
               : "An unexpected error occurred. Please try again later."}
           </p>
