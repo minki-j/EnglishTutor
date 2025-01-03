@@ -25,7 +25,6 @@ export function Navigation() {
   const { setTheme, theme } = useTheme();
 
   const links = [
-    { href: "/", label: "Write", icon: PenLine },
     { href: "/history", label: "History", icon: Clock, requiresAuth: true },
     { href: "/quiz", label: "Quiz", icon: Brain, requiresAuth: true },
   ];
@@ -36,8 +35,8 @@ export function Navigation() {
         <div className="flex w-full items-center justify-between space-x-8">
           <div className="flex items-center space-x-8">
             <Link href="/" className="text-xl font-bold">
-              <span className="md:hidden">E</span>
-              <span className="hidden md:inline text-xl">EnglishTutor</span>
+              <span className="md:hidden">MET</span>
+              <span className="hidden md:inline text-xl">MyEnglishTutor</span>
             </Link>
             <div className="flex items-center space-x-4">
               {links.map(({ href, label, icon: Icon, requiresAuth }) =>

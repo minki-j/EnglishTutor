@@ -240,41 +240,47 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           <Button
             onClick={() => processText("correction")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-background border border-border text-muted-foreground"
+            className="text-xs md:text-sm bg-red-50 border border-border text-muted-foreground"
           >
             {isLoading ? (
               "Processing..."
             ) : (
-              <span className="flex items-center gap-1">
-                Correct Writing
-                <span className="hidden md:inline">(⌘+↵)</span>
-              </span>
+              <div>
+                <span className="md:hidden">Correct</span>
+                <span className="hidden md:inline-flex items-center gap-1">
+                  Correct Writing
+                  <span>(⌘+↵)</span>
+                </span>
+              </div>
             )}
           </Button>
           <Button
             onClick={() => processText("vocabulary")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-background border border-border text-muted-foreground"
+            className="text-xs md:text-sm bg-green-50 border border-border text-muted-foreground"
           >
             {isLoading ? (
               "Processing..."
             ) : (
-              <span className="flex items-center gap-1">
-                Explain Vocabulary
-                <span className="hidden md:inline">(⇧+↵)</span>
-              </span>
+              <div>
+                <span className="md:hidden">Vocab</span>
+                <span className="hidden md:inline-flex items-center gap-1">
+                  Explain Vocabulary
+                  <span>(⇧+↵)</span>
+                </span>
+              </div>
             )}
           </Button>
           <Button
             onClick={() => processText("breakdown")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-background border border-border text-muted-foreground"
+            className="text-xs md:text-sm bg-purple-50 border border-border text-muted-foreground"
           >
             {isLoading ? (
               "Processing..."
             ) : (
               <span className="flex items-center gap-1">
-                Break Down
+                Explain
                 <span className="hidden md:inline">Sentences</span>
               </span>
             )}

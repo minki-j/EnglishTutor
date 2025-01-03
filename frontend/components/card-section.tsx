@@ -27,25 +27,27 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
         {title}
       </h3>
       <div
-        className={`group relative rounded-sm p-1 -m-1 ${onCopy ? "cursor-pointer hover:bg-muted/50" : ""
-          }`}
+        className={`rounded-sm p-1`}
         onClick={onCopy ? handleCopy : undefined}
       >
         {variant === "default" ? (
-          <div className="text-foreground/90 pr-8">
+          <div className="relative group text-foreground/90 pr-8 cursor-pointer hover:bg-muted/50">
             {!content ? (
               <Spinner />
             ) : (
               <ReactMarkdown>{content as string}</ReactMarkdown>
             )}
+            <div className="absolute right-0 top-0">
+              <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
           </div>
         ) : (
           !content || content?.length === 0 ? (
-              <Spinner />
+            <Spinner />
           ) : (
             <ul className="list-disc pl-4 space-y-1">
               {(content as ICorrectionItem[] | string[]).map((item, index) => (
-                <li key={index}>
+                <li key={index} className="group relative cursor-pointer hover:bg-muted/50">
                   <div className="pr-8">
                     <p className="font-medium">
                       {/* TODO: improve this hard coded solution */}
@@ -56,15 +58,13 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
                       {typeof item === 'string' ? '' : item.explanation}
                     </p>
                   </div>
+                  <div className="absolute right-0 top-0">
+                    <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </li>
               ))}
             </ul>
           )
-        )}
-        {onCopy && (
-          <div className="absolute right-2 top-2">
-            <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-          </div>
         )}
       </div>
     </div>

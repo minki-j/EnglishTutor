@@ -105,22 +105,14 @@ body .w-md-editor-text-input {
   line-height: 27px !important;
 }
 
-@layer utilities {
-  /* Default hover styles that will only apply to devices that support hover */
-  @media (hover: hover) and (pointer: fine) {
-    .hover-effect:hover {
-      /* Your hover styles here */
-      opacity: 0.8;
-      transition: opacity 0.2s ease;
-    }
-  }
-
-  /* For touch devices - no hover effects */
-  @media (hover: none) {
-    .hover-effect:hover {
-      /* Disable hover effects */
-      opacity: 1;
-      transition: none;
-    }
+/* Disable hover effects on touch devices while maintaining click functionality */
+@media (hover: none) {
+  a:hover,
+  button:hover,
+  [role="button"]:hover,
+  .hover\:*,
+  *[class*="hover"],
+  *:hover {
+    all: unset !important;
   }
 }

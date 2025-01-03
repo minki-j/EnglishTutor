@@ -83,11 +83,17 @@ export function ResultCard({ entry, onDelete }: Props) {
   };
 
   return (
-    <Card className={`p-6 relative`}>
+    <Card className={`p-6 relative ${
+      entry.type === 'correction' 
+        ? 'bg-red-50' 
+        : entry.type === 'vocabulary' 
+        ? 'bg-green-50' 
+        : 'bg-purple-50'
+    }`}>
       <div className="flex justify-between items-stretch">
         {cardContent(entry)}
         <div className="flex-[0.1] flex flex-col justify-between items-end">
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground text-right whitespace-nowrap overflow-x-auto">
             {entry.createdAt
               ? entry.createdAt.toLocaleDateString("en-US", {
                   month: "short",
