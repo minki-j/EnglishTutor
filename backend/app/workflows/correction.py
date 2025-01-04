@@ -81,7 +81,7 @@ explanation:
 ---
 
 Important!!
-- Don't explain spelling and punctuation corrections
+- Don't explain corrections related to minor spelling errors, capitalizations, and punctuations.
 - Explain more important corrections first
 """
         )

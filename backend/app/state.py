@@ -18,6 +18,7 @@ class OutputState(BaseModel):
     corrections: Annotated[list[CorrectionItem], append] = Field(default_factory=list)
     definition: str = Field(default="")
     examples: Annotated[list[str], append] = Field(default_factory=list)
+    breakdown: str = Field(default="")
 
 
 class InputState(BaseModel):

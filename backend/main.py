@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
+import inspect
 
 from app.workflows.correction import g as correction_graph
 from app.workflows.vocabulary import g as vocabulary_graph
@@ -91,32 +93,54 @@ async def tutor_ws(websocket: WebSocket):
         config = {"configurable": {"thread_id": result_id_str}}
 
         # Stream the intermediate results
-        # TODO: Not working for Vocabulary and Breakdown
         async for data in workflow.astream(
             {"input": input, "thread_id": result_id_str, "aboutMe": aboutMe},
-            stream_mode="custom",
+            stream_mode=["custom", "breakdown"],
             config=config,
         ):
             print("\n Graph stream: ", data)
-            # Serialize CorrectionItem
-            if "correction" in data and isinstance(data["correction"], CorrectionItem):
+            response_data = {
+                "id": result_id_str,
+                "type": type,
+            }
+
+            if "breakdown" in data:
+                breakdown_value = data["breakdown"]
+                if inspect.iscoroutine(breakdown_value):
+                    # If it's a coroutine that yields values, stream them
+                    async for stream_value in breakdown_value:
+                        print("\n >>> stream value: ", stream_value)
+                        response_data["breakdown"] = stream_value
+                        await websocket.send_json(response_data)
+                else:
+                    response_data["breakdown"] = breakdown_value
+                    await websocket.send_json(response_data)
+            elif "correction" in data and isinstance(data["correction"], CorrectionItem):
+                # Serialize CorrectionItem
                 result.corrections.append(data["correction"])
-                data["correction"] = data["correction"].model_dump()
+                response_data["correction"] = data["correction"].model_dump()
             elif "example" in data and isinstance(data["example"], str):
                 result.examples.append(data["example"])
+                response_data["example"] = data["example"]
             else:
                 for key, value in data.items():
-                    if hasattr(result, key):
-                        setattr(result, key, value)
+                    if inspect.iscoroutine(value):
+                        # If it's a coroutine that yields values, stream them
+                        async for stream_value in value:
+                            response_data[key] = stream_value
+                            if hasattr(result, key):
+                                setattr(result, key, stream_value)
+                            await websocket.send_json(response_data)
+                    else:
+                        # Handle non-coroutine values
+                        response_data[key] = value
+                        if hasattr(result, key):
+                            setattr(result, key, value)
 
-            print("\n >>> Send data\n", data)
-            await websocket.send_json(
-                {
-                    "id": result_id_str,
-                    "type": type,
-                    **data,
-                }
-            )
+            # Only send if we haven't already sent in the coroutine streaming loop
+            if not any(inspect.iscoroutine(v) for v in data.values()):
+                print("\n >>> Send data\n", response_data)
+                await websocket.send_json(response_data)
 
         print("\n >>> result: ", result)
         # Convert Pydantic model to dictionary before inserting
