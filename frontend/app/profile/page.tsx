@@ -1,42 +1,39 @@
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { connectDB } from "@/lib/mongodb"; 
-import User from "@/models/User";
+import { client } from "@/lib/mongodb";
+import { ProfileForm } from "./profile-form";
 
-interface UserDocument {
-  googleId: string;
-  name: string;
-  email: string;
-  image: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export default async function HistoryPage() {
+export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
     redirect("/");
   }
 
-  await connectDB(); 
-  const user = (await User.findOne({
-    googleId: session.user?.id,
-  }).lean()) as unknown as UserDocument;
+  const db = client.db("test");
+  const collection = db.collection('users');
+
+  const user_mongodb = await collection.findOne({ googleId: session.user?.id });
+
+  if (!user_mongodb) {
+    return (
+      <div className="container mx-auto py-8">
+        <p className="text-muted-foreground">No user found</p>
+      </div>
+    );
+  }
+
+  const user = { id: user_mongodb._id.toString(), name: user_mongodb.name, email: user_mongodb.email, aboutMe: user_mongodb.aboutMe };
+
+  if (user === null) {
+    throw new Error("User document is null");
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="space-y-4">
-        {user ? (
-          <>
-            <p className="text-muted-foreground">{user.name}</p>
-            <p className="text-muted-foreground">{user.email}</p>
-          </>
-        ) : (
-          <p className="text-muted-foreground">No user found</p>
-        )}
-      </div>
+    <div className="container mx-auto py-8 max-w-2xl">
+      <h1 className="text-2xl font-bold mb-6">Profile Settings</h1>
+      <ProfileForm user={user} />
     </div>
   );
 }

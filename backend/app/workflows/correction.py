@@ -18,9 +18,8 @@ def correct_input(state: OverallState, writer: StreamWriter):
     
     corrected_input = (
         ChatPromptTemplate.from_template(
-            """You are a experienced ESL tutor. Improve the following text: {input}
-            
-            Don't add any explanation. Only return the corrected text."""
+            """You are a experienced ESL tutor. Your student asked you to look at their Enlglish expression or writing. Here is what they showed you: {input}
+As an ESL teacher and a native English speaker, think if there is any grammatical errors or awkward expressions. If so, correct them and return it without any explanation or preambles such as "This sentence is grammatically correct:". Only return the corrected text."""
         )
         | chat_model
         | StrOutputParser()
@@ -53,12 +52,38 @@ def generate_explanation(state: OverallState, writer: StreamWriter):
     response = (
         ChatPromptTemplate.from_template(
             """You are a experienced ESL tutor. Your student asked you to look at their Enlglish expression or writing and improve it.
-            Here is their original: {input}
-            Here it your corrected version: {correctedText}
-            
-            Now you have to give explanations for your corrections one by one. And here is the explanations that you have already given: {corrections}
-            
-            for 'goto' field, if you think there is no more explanation, return END. Otherwise, return generate_explanation"""
+Here is their original: {input}
+Here it your corrected version: {correctedText}
+
+Now you have to give explanations for your corrections one by one.
+
+Here is the explanations that you have already given: {corrections}
+
+If you don't have any more explanations, return END for 'goto' field with empty string for 'explanation' field.
+If there is more explanations, then return generate_explanation for 'goto' field with the explanation for 'explanation' field.
+
+---
+
+Example:
+
+input: However I go store everyday
+
+corrected version: However, I go to the store every day.
+
+explanation:
+
+    correction: go → go to
+    explanation: **to** must come after the verb **go** to show direction or a destination. 
+
+    correction: store → the store
+    explanation: add **the** before **store** because it shows we’re talking about a specific store, not just any store. In English, **the** helps make it clear which place we mean.
+
+---
+
+Important!!
+- Don't explain spelling and punctuation corrections
+- Explain more important corrections first
+"""
         )
         | chat_model.with_structured_output(ExplanationResponse)
     ).invoke(

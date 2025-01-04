@@ -23,7 +23,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
-  const { data: session } = useSession();
+  const { data: session } = useSession();  
 
   useEffect(() => {
     if (!isLoading && textareaRef.current) {
@@ -228,7 +228,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           height="100%"
           className="mb-4 min-h-[200px]"
           textareaProps={{
-            placeholder: "Enter your text here...",
+            placeholder: "What do you want to ask?",
             onKeyDown: handleKeyDown,
             disabled: isLoading,
             autoFocus: autoFocus,
@@ -240,7 +240,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           <Button
             onClick={() => processText("correction")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-red-50 border border-border text-muted-foreground"
+            className="text-xs md:text-sm"
+            variant="outline"
           >
             {isLoading ? (
               "Processing..."
@@ -257,7 +258,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           <Button
             onClick={() => processText("vocabulary")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-green-50 border border-border text-muted-foreground"
+            className="text-xs md:text-sm"
+            variant="outline"
           >
             {isLoading ? (
               "Processing..."
@@ -274,7 +276,8 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           <Button
             onClick={() => processText("breakdown")}
             disabled={isLoading}
-            className="text-xs md:text-sm bg-purple-50 border border-border text-muted-foreground"
+            className="text-xs md:text-sm"
+            variant="outline"
           >
             {isLoading ? (
               "Processing..."

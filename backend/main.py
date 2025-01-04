@@ -37,16 +37,6 @@ app.add_middleware(
 async def health_check():
     return {"status": "healthy", "message": "Service is running"}
 
-@app.get("/correction", response_model=Correction)
-async def get_corrections():
-    return Correction(
-        userId="123",
-        input="Hello, world!",
-        correctedText="Hello, world!",
-        corrections=[CorrectionItem(correction="Hello, world!", explanation="Hello, world!")],
-    )
-
-
 @app.websocket("/ws/tutor")
 async def tutor_ws(websocket: WebSocket):
     """
@@ -69,6 +59,8 @@ async def tutor_ws(websocket: WebSocket):
             await websocket.send_json({"error": error_msg})
             return
 
+        aboutMe = ""
+
         if type == "correction":
             graph = correction_graph
             result = Correction(
@@ -77,6 +69,8 @@ async def tutor_ws(websocket: WebSocket):
             )
         elif type == "vocabulary":
             graph = vocabulary_graph
+            user = await main_db.users.find_one({"googleId": user_id})
+            aboutMe = user.get("aboutMe", "")
             result = Vocabulary(
                 userId=user_id,
                 input=input,
@@ -99,7 +93,7 @@ async def tutor_ws(websocket: WebSocket):
         # Stream the intermediate results
         # TODO: Not working for Vocabulary and Breakdown
         async for data in workflow.astream(
-            {"input": input, "thread_id": result_id_str},
+            {"input": input, "thread_id": result_id_str, "aboutMe": aboutMe},
             stream_mode="custom",
             config=config,
         ):

@@ -85,10 +85,10 @@ export function ResultCard({ entry, onDelete }: Props) {
   return (
     <Card className={`p-6 relative ${
       entry.type === 'correction' 
-        ? 'bg-red-50' 
+      ? 'bg-[hsl(var(--chart-1)_/_0.1)]' 
         : entry.type === 'vocabulary' 
-        ? 'bg-green-50' 
-        : 'bg-purple-50'
+        ? 'bg-[hsl(var(--chart-2)_/_0.1)]' 
+        : 'bg-[hsl(var(--chart-3)_/_0.1)]'
     }`}>
       <div className="flex justify-between items-stretch">
         {cardContent(entry)}

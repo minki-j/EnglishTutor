@@ -10,13 +10,13 @@ export function CardContentCorrection({ entry, copyToClipboard }: Props) {
   return (
     <div className="space-y-4 flex-[0.9]">
       <CardSection
-        title="Original"
-        content={entry.input}
+        title="Corrected"
+        content={entry.correctedText}
         onCopy={copyToClipboard}
       />
       <CardSection
-        title="Corrected"
-        content={entry.correctedText}
+        title="Original"
+        content={entry.input}
         onCopy={copyToClipboard}
       />
       <CardSection

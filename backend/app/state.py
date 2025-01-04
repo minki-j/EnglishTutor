@@ -23,6 +23,7 @@ class OutputState(BaseModel):
 class InputState(BaseModel):
     thread_id: str
     input: str
+    aboutMe: str = Field(default="")
 
 
 class OverallState(InputState, OutputState):

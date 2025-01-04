@@ -105,14 +105,8 @@ body .w-md-editor-text-input {
   line-height: 27px !important;
 }
 
-/* Disable hover effects on touch devices while maintaining click functionality */
+/* Need to prevent hover styles on mobile */
 @media (hover: none) {
-  a:hover,
-  button:hover,
-  [role="button"]:hover,
-  .hover\:*,
-  *[class*="hover"],
   *:hover {
-    all: unset !important;
   }
 }

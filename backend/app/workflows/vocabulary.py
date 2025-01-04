@@ -23,20 +23,28 @@ You are an expert in English vocabulary. You are given a word or phrase or a sen
 
 ---
 
-input: "buoy"
-output: "a floating object used to mark the position of a hazard in the water"
+input: buoy
+definition: a floating object used to mark the position of a hazard in the water
 
-input: "blow up at somebody"
-output: "to become angry with someone"
+input: What none of the volunteers knew until they arrived for the study was the method we would be using, one of the most powerful techniques scientists have **<u>at our disposal</u>** for stressing people out in the lab
+definition: In this context, "at our disposal" means "available for us to use." It suggests that the scientists have access to this powerful technique and can use it as a tool or resource for their experiments.
 
-input: "What none of the volunteers knew until they arrived for the study was the method we would be using, one of the most powerful techniques scientists have **at our disposal** for stressing people out in the lab"
-ouput: "**available for us to use** or **within our control or possession**". It indicates that the scientists have access to this powerful technique and can use it whenever they need for their experiments.
+input: blow up at somebody
+definition: to become angry with someone
+
+input: He switches into using distanced language to **convey** to himself that he can in fact write his show
+definition: In this context, "convey" means to express or communicate an idea, feeling, or message. The writer is describing how the person uses "distanced language" (perhaps more formal or detached wording) as a way to communicate or reinforce to himself the belief or realization that he is capable of writing his show.
+
+input: indubitable
+output: something that is unquestionable or impossible to doubt.
 
 input: {input}
 
 ---
 
-Don't generate "output: " or "here is the definition: ". Only return the definition.
+Important!!
+- Don't add "definition: " or "here is the definition: ". Only return the definition.
+- Use simple language so that non-native speakers can understand the definition.
 """
         )
         | chat_model
@@ -59,18 +67,25 @@ def generate_example(state: OverallState, writer: StreamWriter):
 
     response = (
         ChatPromptTemplate.from_template(
-            """You are a experienced ESL tutor. Your student asked you about the meaning of the following word or phrase or bolded part of a sentence.
-            question: {input}
-             
-            You answered back to the student with the following explanation: {definition}
-            
-            Now you have to give an example sentence for the word or phrase or bolded part of a sentence. Here are the example sentences that you have already given: {examples} 
+            """You are a experienced ESL tutor. Your student asked the meaning of the following word or phrase. (If the question is a full sentence, then the bolded part of the sentence is the word or phrase that the student asked the meaning of.)
+Student Question: {input}
 
-            Make sure your new example sentence is not overlapping with the example sentences that you have already given.
-            
-            Make sure the example sentence is related to the word or phrase or bolded part of a sentence.
+You answered back to the student with the following explanation: 
+{definition}
 
-            Don't generate "output: " or "here is the example sentence: ". Only return the example sentence.
+Now you have to give an example sentence.
+
+Here are the example sentences that you have already given: 
+{examples} 
+
+Create a new example sentence that doesn't overlap with the example sentences that you have already given.
+
+Make sure the example sentence is related to the word or phrase or bolded part of a sentence.
+
+Also try to generate an example setence that is realted to the student. Here is the student's information: 
+{aboutMe}
+
+Don't generate "output: " or "here is the example sentence: ". Only return the example sentence.
             """
         )
         | chat_model
@@ -79,7 +94,8 @@ def generate_example(state: OverallState, writer: StreamWriter):
         {
             "input": state.input,
             "definition": state.definition,
-            "examples": "\n".join(state.examples)
+            "examples": "\n".join(state.examples),
+            "aboutMe": state.aboutMe,
         }
     )
 
