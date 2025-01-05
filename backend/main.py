@@ -92,30 +92,38 @@ async def tutor_ws(websocket: WebSocket):
         result_id_str = str(result_id)
         config = {"configurable": {"thread_id": result_id_str}}
 
+        print("calling workflow")
+
         # Stream the intermediate results
-        async for data in workflow.astream(
+        async for stream_mode, data in workflow.astream(
             {"input": input, "thread_id": result_id_str, "aboutMe": aboutMe},
-            stream_mode=["custom", "breakdown"],
+            stream_mode=["custom", "messages"],
             config=config,
         ):
-            print("\n Graph stream: ", data)
+            # print("\n Graph stream: ", data)
             response_data = {
                 "id": result_id_str,
                 "type": type,
             }
 
-            if "breakdown" in data:
-                breakdown_value = data["breakdown"]
-                if inspect.iscoroutine(breakdown_value):
-                    # If it's a coroutine that yields values, stream them
-                    async for stream_value in breakdown_value:
-                        print("\n >>> stream value: ", stream_value)
-                        response_data["breakdown"] = stream_value
-                        await websocket.send_json(response_data)
-                else:
-                    response_data["breakdown"] = breakdown_value
-                    await websocket.send_json(response_data)
-            elif "correction" in data and isinstance(data["correction"], CorrectionItem):
+            if stream_mode == "messages":
+                message, metadata = data
+                if not message.content:
+                    continue
+
+                if metadata["langgraph_node"] != "generate_breakdown":
+                    continue
+
+                response_data["stream"] = message.content
+
+
+                result.breakdown = result.breakdown + message.content
+
+                await websocket.send_json(response_data)
+                continue
+
+
+            if "correction" in data and isinstance(data["correction"], CorrectionItem):
                 # Serialize CorrectionItem
                 result.corrections.append(data["correction"])
                 response_data["correction"] = data["correction"].model_dump()
@@ -123,26 +131,17 @@ async def tutor_ws(websocket: WebSocket):
                 result.examples.append(data["example"])
                 response_data["example"] = data["example"]
             else:
-                for key, value in data.items():
-                    if inspect.iscoroutine(value):
-                        # If it's a coroutine that yields values, stream them
-                        async for stream_value in value:
-                            response_data[key] = stream_value
-                            if hasattr(result, key):
-                                setattr(result, key, stream_value)
-                            await websocket.send_json(response_data)
-                    else:
-                        # Handle non-coroutine values
-                        response_data[key] = value
-                        if hasattr(result, key):
-                            setattr(result, key, value)
+                print("\n>>> Update data\n", data)
+                for k, v in data.items():
+                    setattr(result, k, v)
+                response_data.update(data)
 
             # Only send if we haven't already sent in the coroutine streaming loop
             if not any(inspect.iscoroutine(v) for v in data.values()):
                 print("\n >>> Send data\n", response_data)
                 await websocket.send_json(response_data)
 
-        print("\n >>> result: ", result)
+        print("\n\n>>> result: ", result)
         # Convert Pydantic model to dictionary before inserting
         result_dict = result.model_dump()
         result_dict['_id'] = result_dict.pop('id')

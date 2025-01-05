@@ -100,12 +100,11 @@ Now it's your turn. Break down and explain the following input:
 ---
 
 Important!!
-- Don't return "breakdown: " or "here is the breakdown: ". Only return the content of the breakdown.
+- Don't return "breakdown: ", "here is the breakdown: " or "### Breakdown". Only return the content of the breakdown.
 - Use markdown format.
 """
         )
         | chat_model
-        | StrOutputParser()
     ).ainvoke(
         {
             "input": state.input,
@@ -116,7 +115,7 @@ Important!!
     # writer({"breakdown": response})
 
     return {
-        "breakdown": response,
+        "breakdown_stream_msg": response,
     }
 
 g = StateGraph(OverallState, input=InputState, output=OutputState)

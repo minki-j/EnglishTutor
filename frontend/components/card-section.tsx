@@ -3,6 +3,7 @@ import { ICorrectionItem } from "@/models/Correction";
 import ReactMarkdown from 'react-markdown';
 import { Spinner } from "./ui/spinner";
 
+
 interface Props {
   title: string;
   content: string | ICorrectionItem[] | string[];
@@ -32,10 +33,15 @@ export function CardSection({ title, content, onCopy, variant = 'default', forma
       >
         {variant === "default" ? (
           <div className="relative group text-foreground/90 pr-8 cursor-pointer hover:bg-muted/50">
-            {!content ? (
-              <Spinner />
+            {content ? (
+              <ReactMarkdown
+                components={{
+                  p: ({ node, ...props }) => <p className="" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1" {...props} />,
+                  li: ({ node, ...props }) => <li className="group relative" {...props} />
+                }}>{content as string}</ReactMarkdown>
             ) : (
-              <ReactMarkdown>{content as string}</ReactMarkdown>
+              <Spinner />
             )}
             <div className="absolute right-0 top-0">
               <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />

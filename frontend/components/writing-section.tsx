@@ -23,7 +23,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
   const [isLoading, setIsLoading] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
-  const { data: session } = useSession();  
+  const { data: session } = useSession();
 
   useEffect(() => {
     if (!isLoading && textareaRef.current) {
@@ -100,6 +100,12 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         console.log("======= response =======\n", response);
 
         if (response.error) {
+          console.log("Setting entries - error case");
+          setEntries((prev: Entry[]) => {
+            return prev.filter(
+              (entry) => entry.id !== "default_entry_id"
+            );
+          });
           toast({
             title: "Error",
             description: response.error,
@@ -110,6 +116,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           return;
         }
 
+        console.log("Setting entries - normal case");
         setEntries((prev: Entry[]) => {
           const existingEntryIndex = prev.findIndex(
             (entry) =>
@@ -148,10 +155,12 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
                 ],
               } as IVocabulary;
             } else if (response.type === "breakdown") {
-              updatedEntries[existingEntryIndex] = {
-                ...(updatedEntries[existingEntryIndex] as IBreakdown),
-                ...response,
-              } as IBreakdown;
+              if (response.stream) {
+                updatedEntries[existingEntryIndex] = {
+                  ...(updatedEntries[existingEntryIndex] as IBreakdown),
+                  breakdown: (updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "" + response.stream
+                } as IBreakdown;
+              }
             }
 
             return updatedEntries;
@@ -179,6 +188,12 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           duration: 4000,
         });
         setIsLoading(false);
+        console.log("Setting entries - error case");
+        setEntries((prev: Entry[]) => {
+          return prev.filter(
+            (entry) => entry.id !== "default_entry_id"
+          );
+        });
         websocket.close();
       };
 
