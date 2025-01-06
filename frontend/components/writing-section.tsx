@@ -90,17 +90,16 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           websocket.onerror = reject;
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Connection timeout")), 5000)
+          setTimeout(() => reject(new Error("WebSocket Connection timeout")), 5000)
         ),
       ]);
 
       // Set up message handler
       websocket.onmessage = async (event) => {
         const response = JSON.parse(event.data);
-        console.log("======= response =======\n", response);
+        console.log('response: ', response);
 
         if (response.error) {
-          console.log("Setting entries - error case");
           setEntries((prev: Entry[]) => {
             return prev.filter(
               (entry) => entry.id !== "default_entry_id"
@@ -116,7 +115,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           return;
         }
 
-        console.log("Setting entries - normal case");
+
         setEntries((prev: Entry[]) => {
           const existingEntryIndex = prev.findIndex(
             (entry) =>
@@ -154,11 +153,11 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
                   response.example,
                 ],
               } as IVocabulary;
-            } else if (response.type === "breakdown") {
-              if (response.stream) {
+            } else if (response.type === "breakdown") {              
+              if (response.breakdown) {
                 updatedEntries[existingEntryIndex] = {
                   ...(updatedEntries[existingEntryIndex] as IBreakdown),
-                  breakdown: (updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "" + response.stream
+                  breakdown: ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "") + response.breakdown
                 } as IBreakdown;
               }
             }
@@ -188,7 +187,6 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           duration: 4000,
         });
         setIsLoading(false);
-        console.log("Setting entries - error case");
         setEntries((prev: Entry[]) => {
           return prev.filter(
             (entry) => entry.id !== "default_entry_id"
@@ -243,7 +241,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           height="100%"
           className="mb-4 min-h-[200px]"
           textareaProps={{
-            placeholder: "What do you want to ask?",
+            placeholder: "",
             onKeyDown: handleKeyDown,
             disabled: isLoading,
             autoFocus: autoFocus,

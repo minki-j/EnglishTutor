@@ -114,7 +114,7 @@ async def tutor_ws(websocket: WebSocket):
                 if metadata["langgraph_node"] != "generate_breakdown":
                     continue
 
-                response_data["stream"] = message.content
+                response_data["breakdown"] = message.content
 
 
                 result.breakdown = result.breakdown + message.content

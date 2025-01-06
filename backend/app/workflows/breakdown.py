@@ -26,71 +26,76 @@ Here are some examples:
 The design team staged an intervention with you.
 </input>
 <breakdown>
-If the design team "staged an intervention" with you, it generally means that the team collectively approached you to address a concern, issue, or situation they felt needed immediate attention or change.
-
 Meaning: The design team came together to talk to you about an important issue.
+
+If the design team "staged an intervention" with you, it generally means that the team collectively approached you to address a concern, issue, or situation they felt needed immediate attention or change.
 </breakdown>
+-> tip: It focuses on the main phrase "staged an intervention" which is obviously the part that the user asks for. It didn't use bullet points since it is not a list.
 
 
 <input>
 Teens admit to brazen Bank street shooting.
 </input>
 <breakdown>
-- Admit to: Say openly that they are responsible for something (confess).
-- Brazen: Very bold or shameless, without showing fear or guilt. Here it is used as an adjective describing the shooting.
-- Bank Street shooting: An event where someone used a gun on Bank Street (a specific place).
-
 Meaning: A group of teenagers said they were responsible for a bold and shocking shooting that happened on Bank Street.
-</breakdown>
+
+- admit to: Say openly that they are responsible for something (confess).
+- brazen: Very bold or shameless, without showing fear or guilt. Here it is used as an adjective describing the shooting.
+- Bank Street shooting: An event where someone used a gun on Bank Street (a specific place).
+</breakdown> 
 
 
 <input>
 Not only did the sudden shift in policy undermine long-standing practices, but it also exposed the fragile balance between innovation and tradition
 </input>
 <breakdown>
+Meaning: The sudden change in policy not only weakened established practices, but it also revealed how delicate the relationship between new ideas and old traditions is.
+
 - Not only did: "Not only did __" is an inversion of "__ not only...". This inversion is used for emphasis in the sentence.
 - the sudden shift in policy: The subject of the first part of the sentence. It refers to a quick or unexpected change in policy.
 - undermine long-standing practices: The verb phrase in the first part. "Undermine" means to weaken or erode, and "long-standing practices" refers to established, traditional ways of doing things.
 - but it also exposed: This introduces the second part of the sentence, part of the "Not only... but also" construction. It means that the policy shift also revealed something else.
-
-Meaning: The sudden change in policy not only weakened established practices, but it also revealed how delicate the relationship between new ideas and old traditions is.
 </breakdown>
+-> tip: It didn't explain vocabularies that are straightforward such as innovation and tradition. Inversion is always tricky for non-native speakers, so it focues on that.
 
 
 <input>
 Had the committee, in its haste to implement sweeping reforms, fully anticipated the subtle, often imperceptible consequences that would inevitably ripple through the intricate network of policies, perhaps it would have approached the situation with more caution.
 </input>
 <breakdown>
+Meaning: If the committee had fully understood the potential small and unnoticed consequences of their reforms, which would affect the entire policy system, they would have acted more cautiously.
+
 - Had the committee: This is an inversion used in a conditional structure. It means the same as "If the committee had..."
 in its haste to implement sweeping reforms: A parenthetical phrase explaining why the committee acted quickly. "In its haste" means "because it was in a rush," and "to implement sweeping reforms" shows the reason for the rush.
 - fully anticipated...: This is the verb for the conditional phrase "Had the committee".
 - the subtle, often imperceptible consequences: There are two adjective connected with "," in this sentence. Both describe the consequences.
 - that would inevitably ripple through the intricate network of policies: A relative clause explaining what the consequences would do—spread gradually and affect the complex system of policies.
 - perhaps it would have approached the situation with more caution: The result of the hypothetical situation. It means that if the committee had known the consequences, it would have acted more carefully.
-
-Meaning: If the committee had fully understood the potential small and unnoticed consequences of their reforms, which would affect the entire policy system, they would have acted more cautiously.
 </breakdown>
+-> tip: This sentence is a bit complex, thus the breakdown focuses on the structure of the entire sentence.
 
 
 <input>
 I feel comfortable just walking up to someone you find interesting and start a conversation.
 </input>
 <breakdown>
+Meaning: I feel comfortable approaching someone you think is interesting and starting a conversation.
+
 - walking up to someone: The phrasal verb "walk up to" implies approaching or getting closer to a person in a direct manner. It gives the sense of moving toward someone with a purpose. The "up" makes the action feel more focused or intentional, as if you’re actively heading toward them to start an interaction.
 - you find interesting: This is a relative clause modifying "someone." Here, "find" is used as "to perceive" or "to think of." It is often used when describing how we form opinions or impressions of people, things, or situations.
-
-Meaning: I feel comfortable approaching someone you think is interesting and starting a conversation.
 </breakdown>
+-> tip: It didn't explain too obvious things, only focusing on the phrases that non-native speakers might not understand. 
 
 
 <input>
 Did I say anything completely out in left field? 
 </input>
 <breakdown>
-The phrase "out in left field" is an idiom that means something is unusual, unexpected, or far from the main idea. It's often used to describe ideas, comments, or actions that seem random, strange, or disconnected from the current topic.
-
 Meaning: Did I say anything that is unusual or far from the main idea?
+
+The phrase "out in left field" originates from baseball, where the left field position is distant from the main action, symbolizing being removed or unconventional. It is now used to describe someone or something as eccentric, unusual, or out of touch.
 </breakdown>
+-> tip: the breakdown includes the origin of the idiomatic phrase which will help the student understand the meaning of the phrase better. It didn't use bullet points since it is not a list.
 
 ---
 
@@ -101,7 +106,10 @@ Now it's your turn. Break down and explain the following input:
 
 Important!!
 - Don't return "breakdown: ", "here is the breakdown: " or "### Breakdown". Only return the content of the breakdown.
+- Don't generate "-> tip: " part. It's just for you to understand examples better.
 - Use markdown format.
+- Don't explain too obvious things as the examples above demonstrate.
+- Try to explain idiomic phrases with its origin or the metaphor it represents.
 """
         )
         | chat_model
