@@ -35,8 +35,8 @@ export function Navigation() {
         <div className="flex w-full items-center justify-between space-x-8">
           <div className="flex items-center space-x-8">
             <Link href="/" className="text-xl font-bold">
-              <span className="md:hidden">MET</span>
-              <span className="hidden md:inline text-xl">MyEnglishTutor</span>
+              <span className="md:hidden">AIET</span>
+              <span className="hidden md:inline text-xl">AI English Tutor</span>
             </Link>
             <div className="flex items-center space-x-4">
               {links.map(({ href, label, icon: Icon, requiresAuth }) =>
