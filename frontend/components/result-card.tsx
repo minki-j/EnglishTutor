@@ -88,7 +88,7 @@ export function ResultCard({ entry, onDelete }: Props) {
       ? 'bg-[hsl(var(--chart-1)_/_0.1)]' 
         : entry.type === 'vocabulary' 
         ? 'bg-[hsl(var(--chart-2)_/_0.1)]' 
-        : 'bg-[hsl(var(--chart-3)_/_0.1)]'
+        : 'bg-[hsl(var(--chart-4)_/_0.1)]'
     }`}>
       <div className="flex justify-between items-stretch">
         {cardContent(entry)}
