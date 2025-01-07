@@ -13,38 +13,19 @@ import { ResultCard } from "./result-card";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
-import MDEditor from '@uiw/react-md-editor';
+import MDEditor from "@uiw/react-md-editor";
 
 type Entry = ICorrection | IVocabulary | IBreakdown;
 
-export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
+export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [currentText, setCurrentText] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const { data: session } = useSession();
 
-  useEffect(() => {
-    if (!isLoading && textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, [isLoading]);
-
-  const processText = async (
+  const set_default_entry = (
     type: "correction" | "vocabulary" | "breakdown"
   ) => {
-    setIsLoading(true);
-
-    if (!currentText.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter some text to analyze",
-        variant: "destructive",
-        duration: 4000,
-      });
-      return;
-    }
     setEntries((prev: Entry[]) => {
       return [
         {
@@ -56,10 +37,9 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         ...prev,
       ];
     });
+  };
 
-    setCurrentText("");
-    setIsLoading(false);
-
+  const connectWebSocket = () => {
     let websocket: WebSocket;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -78,126 +58,115 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         variant: "destructive",
         duration: 4000,
       });
-      setIsLoading(false);
+      return;
+    }
+    return websocket;
+  };
+
+  const assignOnMessageHanlder = async (
+    websocket: WebSocket,
+    updateEntryLogic: (prev: Entry[], response: any) => Entry[]
+  ) => {
+    websocket.onmessage = async (event) => {
+      const response = JSON.parse(event.data);
+      console.log("response: ", response);
+
+      if (response.error) {
+        // remove default entry when there is an error
+        setEntries((prev: Entry[]) => {
+          return prev.filter(
+            (entry) =>
+              entry.id !== "default_entry_id" || entry.id === response.id
+          );
+        });
+        toast({
+          title: "Error",
+          description: response.error,
+          variant: "destructive",
+          duration: 4000,
+        });
+        return;
+      }
+
+      setEntries((prev: Entry[]) => {
+        // find the index of the entry that we are populating now
+        const existingEntryIndex = prev.findIndex(
+          (entry) => entry.id === response.id || entry.id === "default_entry_id"
+        );
+
+        // if default entry, just update with response
+        if (prev[existingEntryIndex].id === "default_entry_id") {
+          return prev.map((entry, index) =>
+            index === existingEntryIndex ? { ...entry, ...response } : entry
+          );
+        } else {
+          // if not default entry, update with specific logic for each type
+          const updatedEntries = updateEntryLogic(prev, response);
+          return updatedEntries;
+        }
+      });
+    };
+  };
+
+  const assignRemainingEventHandlers = async (websocket: WebSocket) => {
+    websocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      toast({
+        title: "Error",
+        description: "WebSocket connection error",
+        variant: "destructive",
+        duration: 4000,
+      });
+      setEntries((prev: Entry[]) => {
+        return prev.filter((entry) => entry.id !== "default_entry_id" );
+      });
+      if (websocket.readyState !== WebSocket.CLOSED) {
+        websocket.close();
+      }
+    };
+
+    websocket.onclose = async () => {};
+  };
+
+  const genericProcess = async (
+    type: "correction" | "vocabulary" | "breakdown",
+    correctionEntryUpdateLogic: (prev: Entry[], response: any) => Entry[]
+  ) => {
+    if (!currentText.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter some text to analyze",
+        variant: "destructive",
+        duration: 4000,
+      });
+      return;
+    }
+    
+    const websocket = connectWebSocket();
+    if (!websocket) {
       return;
     }
 
-    try {
-      // Wait for the connection to open
+    try {      
+      set_default_entry(type);
+      setCurrentText("");
       await Promise.race([
         new Promise((resolve, reject) => {
           websocket.onopen = resolve;
           websocket.onerror = reject;
         }),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("WebSocket Connection timeout")), 5000)
+          setTimeout(
+            () => reject(new Error("WebSocket Connection timeout")),
+            5000
+          )
         ),
       ]);
 
-      // Set up message handler
-      websocket.onmessage = async (event) => {
-        const response = JSON.parse(event.data);
-        console.log('response: ', response);
+      assignOnMessageHanlder(websocket, correctionEntryUpdateLogic);
+      assignRemainingEventHandlers(websocket);
 
-        if (response.error) {
-          setEntries((prev: Entry[]) => {
-            return prev.filter(
-              (entry) => entry.id !== "default_entry_id"
-            );
-          });
-          toast({
-            title: "Error",
-            description: response.error,
-            variant: "destructive",
-            duration: 4000,
-          });
-          setIsLoading(false);
-          return;
-        }
-
-
-        setEntries((prev: Entry[]) => {
-          const existingEntryIndex = prev.findIndex(
-            (entry) =>
-              (entry.id === response.id || entry.id === "default_entry_id")
-          );
-
-          if (prev[existingEntryIndex].id === "default_entry_id") {
-            return prev.map((entry, index) =>
-              index === existingEntryIndex
-                ? { ...entry, ...response }
-                : entry
-            );
-          } else {
-            // prev is immutable, so we need to create a new array
-            const updatedEntries = [...prev];
-
-            // Update existing entry, preserving original fields
-            if (response.type === "correction") {
-              const correctionEntry = updatedEntries[
-                existingEntryIndex
-              ] as ICorrection;
-              updatedEntries[existingEntryIndex] = {
-                ...correctionEntry,
-                corrections: [
-                  ...(correctionEntry.corrections || []),
-                  response.correction,
-                ],
-              } as ICorrection;
-            } else if (response.type === "vocabulary") {
-              updatedEntries[existingEntryIndex] = {
-                ...(updatedEntries[existingEntryIndex] as IVocabulary),
-                examples: [
-                  ...((updatedEntries[existingEntryIndex] as IVocabulary)
-                    .examples || []),
-                  response.example,
-                ],
-              } as IVocabulary;
-            } else if (response.type === "breakdown") {              
-              if (response.breakdown) {
-                updatedEntries[existingEntryIndex] = {
-                  ...(updatedEntries[existingEntryIndex] as IBreakdown),
-                  breakdown: ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "") + response.breakdown
-                } as IBreakdown;
-              }
-            }
-
-            return updatedEntries;
-          }
-        });
-
-        setCurrentText("");
-        setIsLoading(false);
-
-        if (response.type === "correction" && response.corrected) {
-          navigator.clipboard.writeText(response.corrected);
-          toast({
-            description: "Corrected text is copied to clipboard",
-            duration: 2000,
-          });
-        }
-      };
-
-      websocket.onerror = (error) => {
-        console.error("WebSocket error:", error);
-        toast({
-          title: "Error",
-          description: "WebSocket connection error",
-          variant: "destructive",
-          duration: 4000,
-        });
-        setIsLoading(false);
-        setEntries((prev: Entry[]) => {
-          return prev.filter(
-            (entry) => entry.id !== "default_entry_id"
-          );
-        });
-        websocket.close();
-      };
-
-      websocket.onclose = async () => {
-        setIsLoading(false);
-      };
+      setCurrentText("");
 
       websocket.send(
         JSON.stringify({
@@ -207,25 +176,75 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
         })
       );
     } catch (error) {
-      setIsLoading(false);
-      websocket.close();
+      console.log("WebSocket close at catch");
+      if (websocket.readyState !== WebSocket.CLOSED) {
+        websocket.close();
+      }
       toast({
         title: "Error",
-        description: `Failed to ${type}. Please try again.`,
+        description: `${error}`,
         variant: "destructive",
         duration: 4000,
       });
     }
   };
 
+  const findEntryIndexById = (prev: Entry[], id: string) => {
+    return prev.findIndex(
+      (entry) => entry.id === id || entry.id === "default_entry_id"
+    );
+  };
+
+  const correctionEntryUpdateLogic = (prev: Entry[], response: any) => {
+    const existingEntryIndex = findEntryIndexById(prev, response.id);
+    const updatedEntries = [...prev];
+    const correctionEntry = updatedEntries[existingEntryIndex] as ICorrection;
+    updatedEntries[existingEntryIndex] = {
+      ...correctionEntry,
+      corrections: [
+        ...(correctionEntry.corrections || []),
+        response.correction,
+      ],
+    } as ICorrection;
+    return updatedEntries;
+  };
+
+  const vocabularyEntryUpdateLogic = (prev: Entry[], response: any) => {
+    const existingEntryIndex = findEntryIndexById(prev, response.id);
+    const updatedEntries = [...prev];
+    updatedEntries[existingEntryIndex] = {
+      ...(updatedEntries[existingEntryIndex] as IVocabulary),
+      examples: [
+        ...((updatedEntries[existingEntryIndex] as IVocabulary).examples || []),
+        response.example,
+      ],
+    } as IVocabulary;
+    return updatedEntries;
+  };
+
+  const breakdownEntryUpdateLogic = (prev: Entry[], response: any) => {
+    const existingEntryIndex = findEntryIndexById(prev, response.id);
+    const updatedEntries = [...prev];
+    updatedEntries[existingEntryIndex] = {
+      ...(updatedEntries[existingEntryIndex] as IBreakdown),
+      breakdown:
+        ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "") +
+        response.breakdown,
+    } as IBreakdown;
+    return updatedEntries;
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
-        processText("correction");
+        genericProcess("correction", correctionEntryUpdateLogic);
       } else if (e.shiftKey) {
         e.preventDefault();
-        processText("vocabulary");
+        genericProcess("vocabulary", vocabularyEntryUpdateLogic);
+      } else if (e.altKey) {
+        e.preventDefault();
+        genericProcess("breakdown", breakdownEntryUpdateLogic);
       }
     }
   };
@@ -235,7 +254,7 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
       <Card className="p-6">
         <MDEditor
           value={currentText}
-          onChange={(value) => setCurrentText(value || '')}
+          onChange={(value) => setCurrentText(value || "")}
           preview="edit"
           hideToolbar={true}
           height="100%"
@@ -243,63 +262,53 @@ export function WritingSection({ autoFocus = false }: { autoFocus?: boolean }) {
           textareaProps={{
             placeholder: "",
             onKeyDown: handleKeyDown,
-            disabled: isLoading,
             autoFocus: autoFocus,
-            style: { height: '100%' },
-
+            style: { height: "100%" },
           }}
         />
         <div className="grid grid-cols-3 gap-4">
           <Button
-            onClick={() => processText("correction")}
-            disabled={isLoading}
+            onClick={() =>
+              genericProcess("correction", correctionEntryUpdateLogic)
+            }
             className="text-xs md:text-sm"
             variant="outline"
           >
-            {isLoading ? (
-              "Processing..."
-            ) : (
-              <div>
-                <span className="md:hidden">Correct</span>
-                <span className="hidden md:inline-flex items-center gap-1">
-                  Correct Writing
-                  <span>(⌘+↵)</span>
-                </span>
-              </div>
-            )}
-          </Button>
-          <Button
-            onClick={() => processText("vocabulary")}
-            disabled={isLoading}
-            className="text-xs md:text-sm"
-            variant="outline"
-          >
-            {isLoading ? (
-              "Processing..."
-            ) : (
-              <div>
-                <span className="md:hidden">Vocab</span>
-                <span className="hidden md:inline-flex items-center gap-1">
-                  Explain Vocabulary
-                  <span>(⇧+↵)</span>
-                </span>
-              </div>
-            )}
-          </Button>
-          <Button
-            onClick={() => processText("breakdown")}
-            disabled={isLoading}
-            className="text-xs md:text-sm"
-            variant="outline"
-          >
-            {isLoading ? (
-              "Processing..."
-            ) : (
-              <span className="flex items-center gap-1">
-                Explain
-                <span className="hidden md:inline">Sentences</span>
+            <div>
+              <span className="md:hidden">Correct</span>
+              <span className="hidden md:inline-flex items-center gap-1">
+                Correct Writing
+                <span>(⌘+↵)</span>
               </span>
-            )}
+            </div>
+          </Button>
+          <Button
+            onClick={() =>
+              genericProcess("vocabulary", vocabularyEntryUpdateLogic)
+            }
+            className="text-xs md:text-sm"
+            variant="outline"
+          >
+            <div>
+              <span className="md:hidden">Vocab</span>
+              <span className="hidden md:inline-flex items-center gap-1">
+                Explain Vocabulary
+                <span>(⇧+↵)</span>
+              </span>
+            </div>
+          </Button>
+          <Button
+            onClick={() =>
+              genericProcess("breakdown", breakdownEntryUpdateLogic)
+            }
+            className="text-xs md:text-sm"
+            variant="outline"
+          >
+            <span className="flex items-center gap-1">
+              Explain
+              <span className="hidden md:inline">Sentences</span>
+              <span>(⌥+↵)</span>
+            </span>
           </Button>
         </div>
       </Card>
