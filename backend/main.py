@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
-from fastapi.responses import StreamingResponse
 from contextlib import asynccontextmanager
 import inspect
 
@@ -38,6 +37,211 @@ app.add_middleware(
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "Service is running"}
+
+
+@app.websocket("/ws/correction")
+async def tutor_ws(websocket: WebSocket):
+    """
+    correct the provided input and provide explanations for corrections.
+    """
+    try:
+        await websocket.accept()
+        data = await websocket.receive_json()
+
+        type = data.get("type")
+        input = data.get("input")
+        user_id = data.get("user_id")
+
+        if not type or not input or not user_id:
+            error_msg = (
+                "No type provided"
+                if not type
+                else "No text provided" if not input else "No user ID provided"
+            )
+            await websocket.send_json({"error": error_msg})
+            return
+
+        graph = correction_graph
+        result = Correction(userId=user_id, input=input)
+        workflow = await compile_graph_with_async_checkpointer(graph, type)
+
+        result_id = result.id
+        result_id_str = str(result_id)
+        response_data = {
+            "id": result_id_str,
+            "type": type,
+        }
+
+        async for stream_mode, data in workflow.astream(
+            {
+                "input": input,
+                "thread_id": result_id_str,
+            },
+            stream_mode=["custom"],
+            config={"configurable": {"thread_id": result_id_str}},
+        ):
+            if "correctedText" in data.keys():
+                correctedText = data["correctedText"]
+                result.correctedText = correctedText
+                response_data["correctedText"] = correctedText
+
+            if "corrections" in data.keys():
+                corrections = data["corrections"]
+                result.corrections = corrections
+                response_data["correction"] = corrections
+
+            await websocket.send_json(response_data)
+
+        # Convert Pydantic model to dictionary before inserting
+        result_dict = result.model_dump()
+        result_dict["_id"] = result_dict.pop("id")
+        await main_db.results.insert_one(result_dict)
+        print("Save result to MongoDB")
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print("Error on ws/correction: ")
+        print(error_trace)
+        await websocket.send_json({"error": str(e)})
+
+
+@app.websocket("/ws/vocabulary")
+async def tutor_ws(websocket: WebSocket):
+    """
+    correct the provided input and provide explanations for corrections.
+    """
+    try:
+        await websocket.accept()
+        data = await websocket.receive_json()
+
+        type = data.get("type")
+        input = data.get("input")
+        user_id = data.get("user_id")
+
+        if not type or not input or not user_id:
+            error_msg = (
+                "No type provided"
+                if not type
+                else "No text provided" if not input else "No user ID provided"
+            )
+            await websocket.send_json({"error": error_msg})
+            return
+
+        graph = vocabulary_graph
+        user = await main_db.users.find_one({"googleId": user_id})
+        aboutMe = user.get("aboutMe", "")
+        result = Vocabulary(
+            userId=user_id,
+            input=input,
+            aboutMe=aboutMe,
+        )
+        workflow = await compile_graph_with_async_checkpointer(graph, type)
+
+        result_id = result.id
+        result_id_str = str(result_id)
+        response_data = {
+            "id": result_id_str,
+            "type": type,
+        }
+
+        async for stream_mode, data in workflow.astream(
+            {
+                "input": input,
+                "thread_id": result_id_str,
+                "aboutMe": aboutMe,
+            },
+            stream_mode=["custom"],
+            config={"configurable": {"thread_id": result_id_str}},
+        ):
+            if "definition" in data.keys():
+                definition = data["definition"]
+                result.definition = definition
+                response_data["definition"] = definition
+
+            if "example" in data.keys():
+                example = data["example"]
+                result.examples.append(example)
+                response_data["example"] = example
+
+            await websocket.send_json(response_data)
+
+        result_dict = result.model_dump()
+        result_dict["_id"] = result_dict.pop("id")
+        await main_db.results.insert_one(result_dict)
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print("Error on ws/vocabulary:")
+        print(error_trace)
+        await websocket.send_json({"error": str(e)})
+
+
+@app.websocket("/ws/breakdown")
+async def tutor_ws(websocket: WebSocket):
+    """
+    correct the provided input and provide explanations for corrections.
+    """
+    try:
+        await websocket.accept()
+        data = await websocket.receive_json()
+
+        type = data.get("type")
+        input = data.get("input")
+        user_id = data.get("user_id")
+
+        if not type or not input or not user_id:
+            error_msg = (
+                "No type provided"
+                if not type
+                else "No text provided" if not input else "No user ID provided"
+            )
+            await websocket.send_json({"error": error_msg})
+            return
+
+        graph = breakdown_graph
+        result = Breakdown(userId=user_id, input=input)
+        workflow = await compile_graph_with_async_checkpointer(graph, type)
+
+        result_id = result.id
+        result_id_str = str(result_id)
+        response_data = {
+            "id": result_id_str,
+            "type": type,
+        }
+
+        async for stream_mode, data in workflow.astream(
+            {
+                "input": input,
+                "thread_id": result_id_str,
+            },
+            stream_mode=["custom", "messages"],
+            config={"configurable": {"thread_id": result_id_str}},
+        ):
+            if stream_mode == "messages":
+                message, metadata = data
+                if not message.content:
+                    continue
+
+                response_data["breakdown"] = message.content
+
+                result.breakdown = result.breakdown + message.content
+
+                await websocket.send_json(response_data)
+                print("Send breakdown", message.content)
+                continue
+            else:
+                pass
+
+        result_dict = result.model_dump()
+        result_dict["_id"] = result_dict.pop("id")
+        await main_db.results.insert_one(result_dict)
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print("Error on ws/breakdown: ")
+        print(error_trace)
+        await websocket.send_json({"error": str(e)})
+
 
 @app.websocket("/ws/tutor")
 async def tutor_ws(websocket: WebSocket):
@@ -116,12 +320,10 @@ async def tutor_ws(websocket: WebSocket):
 
                 response_data["breakdown"] = message.content
 
-
                 result.breakdown = result.breakdown + message.content
 
                 await websocket.send_json(response_data)
                 continue
-
 
             if "correction" in data and isinstance(data["correction"], CorrectionItem):
                 # Serialize CorrectionItem
@@ -144,7 +346,7 @@ async def tutor_ws(websocket: WebSocket):
         print("\n\n>>> result: ", result)
         # Convert Pydantic model to dictionary before inserting
         result_dict = result.model_dump()
-        result_dict['_id'] = result_dict.pop('id')
+        result_dict["_id"] = result_dict.pop("id")
         await main_db.results.insert_one(result_dict)
 
     except WebSocketDisconnect:
@@ -156,15 +358,16 @@ async def tutor_ws(websocket: WebSocket):
         print(f"HTTP error {e.status_code}: {e.detail}")
         await websocket.send_json({"error": e.detail})
     except Exception as e:
-        # Get detailed error information
         import traceback
         error_trace = traceback.format_exc()
         print(f"Unexpected error: {str(e)}")
         print(f"Traceback:\n{error_trace}")
-        await websocket.send_json({
-            "error": str(e),
-            "details": error_trace if app.debug else "Internal server error"
-        })
+        await websocket.send_json(
+            {
+                "error": str(e),
+                "details": error_trace if app.debug else "Internal server error",
+            }
+        )
     finally:
         print("Closing WebSocket connection")
         await websocket.close()

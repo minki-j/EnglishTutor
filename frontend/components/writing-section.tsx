@@ -39,17 +39,29 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     });
   };
 
-  const connectWebSocket = () => {
+  const connectWebSocket = (type: "correction" | "vocabulary" | "breakdown") => {
     let websocket: WebSocket;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-      // if backendurl is https, use wss, otherwise use ws
-      const websocketProtocol = backendUrl?.startsWith("https")
-        ? "wss://"
-        : "ws://";
-      websocket = new WebSocket(
-        websocketProtocol + backendUrl?.split("://")[1] + "ws/tutor"
-      );
+      if (!backendUrl) {
+        throw new Error("Backend URL is not configured");
+      }
+      const backendUrlObj = new URL(backendUrl);
+      const wsProtocol = backendUrlObj.protocol === "https:" ? "wss:" : "ws:";
+      const wsUrl = new URL(`ws/${type}`, backendUrlObj.href);
+      wsUrl.protocol = wsProtocol;
+
+      websocket = new WebSocket(wsUrl.toString());
+
+      websocket.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        toast({
+          title: "Connection Error",
+          description: "WebSocket connection failed",
+          variant: "destructive",
+          duration: 4000,
+        });
+      };
     } catch (error) {
       console.error("Failed to connect to WebSocket:", error);
       toast({
@@ -108,26 +120,6 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     };
   };
 
-  const assignRemainingEventHandlers = async (websocket: WebSocket) => {
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      toast({
-        title: "Error",
-        description: "WebSocket connection error",
-        variant: "destructive",
-        duration: 4000,
-      });
-      setEntries((prev: Entry[]) => {
-        return prev.filter((entry) => entry.id !== "default_entry_id" );
-      });
-      if (websocket.readyState !== WebSocket.CLOSED) {
-        websocket.close();
-      }
-    };
-
-    websocket.onclose = async () => {};
-  };
-
   const genericProcess = async (
     type: "correction" | "vocabulary" | "breakdown",
     correctionEntryUpdateLogic: (prev: Entry[], response: any) => Entry[]
@@ -141,8 +133,8 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       });
       return;
     }
-    
-    const websocket = connectWebSocket();
+
+    const websocket = connectWebSocket(type);
     if (!websocket) {
       return;
     }
@@ -164,7 +156,6 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       ]);
 
       assignOnMessageHanlder(websocket, correctionEntryUpdateLogic);
-      assignRemainingEventHandlers(websocket);
 
       setCurrentText("");
 
