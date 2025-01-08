@@ -13,7 +13,39 @@ from app.state import OverallState, InputState, OutputState
 from app.llm import chat_model
 
 
-async def generate_breakdown(state: OverallState, writer: StreamWriter):
+async def generate_paraphrase(state: OverallState):
+    print("\n>>> NODE: generate_paraphrase")
+
+    response = await (
+        ChatPromptTemplate.from_template(
+            """
+Paraphrase the following text for ESL student to understand it better.
+- Use simpler vocabulary.
+- Change idiomatic expressions in a clear way.
+- Use more simple sentence structure.
+
+---
+
+text: {input}
+
+---
+
+Don't include "here is the paraphrased text: " or "Sure, let's paraphrase the text". Just return the paraphrased text.
+"""
+        )
+        | chat_model
+    ).ainvoke(
+        {
+            "input": state.input,
+        }
+    )
+
+    return {
+        "paraphrase": response,
+    }
+
+
+async def generate_breakdown(state: OverallState):
     print("\n>>> NODE: generate_breakdown")
 
     response = await (
@@ -26,8 +58,6 @@ Here are some examples:
 The design team staged an intervention with you.
 </input>
 <breakdown>
-Meaning: The design team came together to talk to you about an important issue.
-
 If the design team "staged an intervention" with you, it generally means that the team collectively approached you to address a concern, issue, or situation they felt needed immediate attention or change.
 </breakdown>
 -> tip: It focuses on the main phrase "staged an intervention" which is obviously the part that the user asks for. It didn't use bullet points since it is not a list.
@@ -37,8 +67,6 @@ If the design team "staged an intervention" with you, it generally means that th
 Teens admit to brazen Bank street shooting.
 </input>
 <breakdown>
-Meaning: A group of teenagers said they were responsible for a bold and shocking shooting that happened on Bank Street.
-
 - admit to: Say openly that they are responsible for something (confess).
 - brazen: Very bold or shameless, without showing fear or guilt. Here it is used as an adjective describing the shooting.
 - Bank Street shooting: An event where someone used a gun on Bank Street (a specific place).
@@ -49,8 +77,6 @@ Meaning: A group of teenagers said they were responsible for a bold and shocking
 Not only did the sudden shift in policy undermine long-standing practices, but it also exposed the fragile balance between innovation and tradition
 </input>
 <breakdown>
-Meaning: The sudden change in policy not only weakened established practices, but it also revealed how delicate the relationship between new ideas and old traditions is.
-
 - Not only did: "Not only did __" is an inversion of "__ not only...". This inversion is used for emphasis in the sentence.
 - the sudden shift in policy: The subject of the first part of the sentence. It refers to a quick or unexpected change in policy.
 - undermine long-standing practices: The verb phrase in the first part. "Undermine" means to weaken or erode, and "long-standing practices" refers to established, traditional ways of doing things.
@@ -63,8 +89,6 @@ Meaning: The sudden change in policy not only weakened established practices, bu
 Had the committee, in its haste to implement sweeping reforms, fully anticipated the subtle, often imperceptible consequences that would inevitably ripple through the intricate network of policies, perhaps it would have approached the situation with more caution.
 </input>
 <breakdown>
-Meaning: If the committee had fully understood the potential small and unnoticed consequences of their reforms, which would affect the entire policy system, they would have acted more cautiously.
-
 - Had the committee: This is an inversion used in a conditional structure. It means the same as "If the committee had..."
 in its haste to implement sweeping reforms: A parenthetical phrase explaining why the committee acted quickly. "In its haste" means "because it was in a rush," and "to implement sweeping reforms" shows the reason for the rush.
 - fully anticipated...: This is the verb for the conditional phrase "Had the committee".
@@ -79,8 +103,6 @@ in its haste to implement sweeping reforms: A parenthetical phrase explaining wh
 I feel comfortable just walking up to someone you find interesting and start a conversation.
 </input>
 <breakdown>
-Meaning: I feel comfortable approaching someone you think is interesting and starting a conversation.
-
 - walking up to someone: The phrasal verb "walk up to" implies approaching or getting closer to a person in a direct manner. It gives the sense of moving toward someone with a purpose. The "up" makes the action feel more focused or intentional, as if you’re actively heading toward them to start an interaction.
 - you find interesting: This is a relative clause modifying "someone." Here, "find" is used as "to perceive" or "to think of." It is often used when describing how we form opinions or impressions of people, things, or situations.
 </breakdown>
@@ -91,8 +113,6 @@ Meaning: I feel comfortable approaching someone you think is interesting and sta
 Did I say anything completely out in left field? 
 </input>
 <breakdown>
-Meaning: Did I say anything that is unusual or far from the main idea?
-
 The phrase "out in left field" originates from baseball, where the left field position is distant from the main action, symbolizing being removed or unconventional. It is now used to describe someone or something as eccentric, unusual, or out of touch.
 </breakdown>
 -> tip: the breakdown includes the origin of the idiomatic phrase which will help the student understand the meaning of the phrase better. It didn't use bullet points since it is not a list.
@@ -119,15 +139,16 @@ Important!!
         }
     )
 
-    # # Stream the output via StreamWriter
-    # writer({"breakdown": response})
-
     return {
-        "breakdown_stream_msg": response,
+        "breakdown_stream_msg": response,  # the response is a async generator
     }
 
+
 g = StateGraph(OverallState, input=InputState, output=OutputState)
-g.add_edge(START, n(generate_breakdown))
+g.add_edge(START, n(generate_paraphrase))
+
+g.add_node(n(generate_paraphrase), generate_paraphrase)
+g.add_edge(n(generate_paraphrase), n(generate_breakdown))
 
 g.add_node(n(generate_breakdown), generate_breakdown)
 g.add_edge(n(generate_breakdown), END)

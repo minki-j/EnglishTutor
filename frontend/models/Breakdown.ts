@@ -5,6 +5,7 @@ export interface IBreakdown {
   type: "breakdown";
   userId: string;
   input: string;
+  paraphrase: string;
   breakdown: string;
   createdAt: Date;
 }
@@ -19,6 +20,10 @@ const BreakdownSchema = new mongoose.Schema<IBreakdown>({
     required: true,
   },
   input: {
+    type: String,
+    required: true,
+  },
+  paraphrase: {
     type: String,
     required: true,
   },
