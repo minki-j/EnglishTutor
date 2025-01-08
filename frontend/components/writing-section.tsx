@@ -39,7 +39,9 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     });
   };
 
-  const connectWebSocket = (type: "correction" | "vocabulary" | "breakdown") => {
+  const connectWebSocket = (
+    type: "correction" | "vocabulary" | "breakdown"
+  ) => {
     let websocket: WebSocket;
     try {
       const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -101,21 +103,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       }
 
       setEntries((prev: Entry[]) => {
-        // find the index of the entry that we are populating now
-        const existingEntryIndex = prev.findIndex(
-          (entry) => entry.id === response.id || entry.id === "default_entry_id"
-        );
-
-        // if default entry, just update with response
-        if (prev[existingEntryIndex].id === "default_entry_id") {
-          return prev.map((entry, index) =>
-            index === existingEntryIndex ? { ...entry, ...response } : entry
-          );
-        } else {
-          // if not default entry, update with specific logic for each type
-          const updatedEntries = updateEntryLogic(prev, response);
-          return updatedEntries;
-        }
+        return updateEntryLogic(prev, response);
       });
     };
   };
@@ -139,7 +127,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       return;
     }
 
-    try {      
+    try {
       set_default_entry(type);
       setCurrentText("");
       await Promise.race([
@@ -186,42 +174,91 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     );
   };
 
-  const correctionEntryUpdateLogic = (prev: Entry[], response: any) => {
+  const correctionEntryUpdateLogic = (
+    prev: Entry[],
+    response: any
+  ) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
-    const correctionEntry = updatedEntries[existingEntryIndex] as ICorrection;
-    updatedEntries[existingEntryIndex] = {
-      ...correctionEntry,
-      corrections: [
-        ...(correctionEntry.corrections || []),
-        response.correction,
-      ],
-    } as ICorrection;
+    const existingEntry = updatedEntries[existingEntryIndex] as ICorrection;
+
+    for (const [key, value] of Object.entries(response)) {
+      if (key === "correction") {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          corrections: [
+            ...(existingEntry.corrections || []),
+            response.correction,
+          ],
+        } as ICorrection;
+      } else {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          [key]: value,
+        } as ICorrection;
+      }
+    }
     return updatedEntries;
   };
 
-  const vocabularyEntryUpdateLogic = (prev: Entry[], response: any) => {
+  const vocabularyEntryUpdateLogic = (
+    prev: Entry[],
+    response: any
+  ) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
-    updatedEntries[existingEntryIndex] = {
-      ...(updatedEntries[existingEntryIndex] as IVocabulary),
-      examples: [
-        ...((updatedEntries[existingEntryIndex] as IVocabulary).examples || []),
-        response.example,
-      ],
-    } as IVocabulary;
+    const existingEntry = updatedEntries[existingEntryIndex] as IVocabulary;
+
+    for (const [key, value] of Object.entries(response)) {
+      if (key === "example") {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          examples: [
+            ...((updatedEntries[existingEntryIndex] as IVocabulary).examples ||
+              []),
+            response.example,
+          ],
+        } as IVocabulary;
+      } else {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          [key]: value,
+        } as IVocabulary;
+      }
+    }
     return updatedEntries;
   };
 
-  const breakdownEntryUpdateLogic = (prev: Entry[], response: any) => {
+  const breakdownEntryUpdateLogic = (
+    prev: Entry[],
+    response: any
+  ) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
-    updatedEntries[existingEntryIndex] = {
-      ...(updatedEntries[existingEntryIndex] as IBreakdown),
-      breakdown:
-        ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown || "") +
-        response.breakdown,
-    } as IBreakdown;
+    const existingEntry = updatedEntries[existingEntryIndex] as IBreakdown;
+
+    for (const [key, value] of Object.entries(response)) {
+      if (key === "breakdown") {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          breakdown:
+            ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown ||
+              "") + response.breakdown,
+        } as IBreakdown;
+      } else if (key === "paraphrase") {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          paraphrase:
+            ((updatedEntries[existingEntryIndex] as IBreakdown).paraphrase ||
+              "") + response.paraphrase,
+        } as IBreakdown;
+      } else {
+        updatedEntries[existingEntryIndex] = {
+          ...existingEntry,
+          [key]: value,
+        } as IBreakdown;
+      }
+    }
     return updatedEntries;
   };
 

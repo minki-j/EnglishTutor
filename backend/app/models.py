@@ -55,6 +55,7 @@ class Breakdown(BaseModel):
     type: str = "breakdown"
     userId: str
     input: str
+    paraphrase: str = Field(default="")
     breakdown: str = Field(default="")
     createdAt: datetime = Field(default_factory=lambda: datetime.now(pytz.timezone('US/Eastern')), frozen=True)
 

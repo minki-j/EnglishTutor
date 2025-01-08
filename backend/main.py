@@ -67,10 +67,6 @@ async def tutor_ws(websocket: WebSocket):
 
         result_id = result.id
         result_id_str = str(result_id)
-        response_data = {
-            "id": result_id_str,
-            "type": type,
-        }
 
         async for stream_mode, data in workflow.astream(
             {
@@ -80,15 +76,19 @@ async def tutor_ws(websocket: WebSocket):
             stream_mode=["custom"],
             config={"configurable": {"thread_id": result_id_str}},
         ):
+            response_data = {
+                "id": result_id_str,
+                "type": type,
+            }
             if "correctedText" in data.keys():
                 correctedText = data["correctedText"]
                 result.correctedText = correctedText
                 response_data["correctedText"] = correctedText
 
-            if "corrections" in data.keys():
-                corrections = data["corrections"]
-                result.corrections = corrections
-                response_data["correction"] = corrections
+            if "correction" in data.keys():
+                correction = data["correction"]
+                result.corrections.append(correction)
+                response_data["correction"] = correction.model_dump()
 
             await websocket.send_json(response_data)
 
@@ -99,6 +99,7 @@ async def tutor_ws(websocket: WebSocket):
         print("Save result to MongoDB")
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/correction: ")
         print(error_trace)
@@ -139,10 +140,6 @@ async def tutor_ws(websocket: WebSocket):
 
         result_id = result.id
         result_id_str = str(result_id)
-        response_data = {
-            "id": result_id_str,
-            "type": type,
-        }
 
         async for stream_mode, data in workflow.astream(
             {
@@ -153,6 +150,10 @@ async def tutor_ws(websocket: WebSocket):
             stream_mode=["custom"],
             config={"configurable": {"thread_id": result_id_str}},
         ):
+            response_data = {
+                "id": result_id_str,
+                "type": type,
+            }
             if "definition" in data.keys():
                 definition = data["definition"]
                 result.definition = definition
@@ -170,6 +171,7 @@ async def tutor_ws(websocket: WebSocket):
         await main_db.results.insert_one(result_dict)
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/vocabulary:")
         print(error_trace)
@@ -204,17 +206,13 @@ async def tutor_ws(websocket: WebSocket):
 
         result_id = result.id
         result_id_str = str(result_id)
-        response_data = {
-            "id": result_id_str,
-            "type": type,
-        }
 
         async for stream_mode, data in workflow.astream(
             {
                 "input": input,
                 "thread_id": result_id_str,
             },
-            stream_mode=["custom", "messages"],
+            stream_mode=["messages"],
             config={"configurable": {"thread_id": result_id_str}},
         ):
             if stream_mode == "messages":
@@ -222,13 +220,25 @@ async def tutor_ws(websocket: WebSocket):
                 if not message.content:
                     continue
 
-                response_data["breakdown"] = message.content
+                if metadata["langgraph_node"] == "generate_paraphrase":
+                    result.paraphrase = result.paraphrase + message.content
+                    await websocket.send_json(
+                        {
+                            "id": result_id_str,
+                            "type": type,
+                            "paraphrase": message.content,
+                        }
+                    )
+                elif metadata["langgraph_node"] == "generate_breakdown":
+                    result.breakdown = result.breakdown + message.content
+                    await websocket.send_json(
+                        {
+                            "id": result_id_str,
+                            "type": type,
+                            "breakdown": message.content,
+                        }
+                    )
 
-                result.breakdown = result.breakdown + message.content
-
-                await websocket.send_json(response_data)
-                print("Send breakdown", message.content)
-                continue
             else:
                 pass
 
@@ -237,6 +247,7 @@ async def tutor_ws(websocket: WebSocket):
         await main_db.results.insert_one(result_dict)
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/breakdown: ")
         print(error_trace)
@@ -359,6 +370,7 @@ async def tutor_ws(websocket: WebSocket):
         await websocket.send_json({"error": e.detail})
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print(f"Unexpected error: {str(e)}")
         print(f"Traceback:\n{error_trace}")

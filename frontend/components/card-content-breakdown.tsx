@@ -15,32 +15,15 @@ export function CardContentBreakdown({ entry, copyToClipboard }: Props) {
         onCopy={copyToClipboard}
       />
       <CardSection
+        title="Paraphrase"
+        content={entry.paraphrase ?? ""}
+        onCopy={copyToClipboard}
+      />
+      <CardSection
         title="Breakdown"
         content={entry.breakdown ?? ""}
         onCopy={copyToClipboard}
       />
-      {/* {entry.corrections?.length > 0 && (
-        <CardSection
-          title="Explanations"
-          content={entry.corrections}
-          variant="list"
-          formatListForCopy={(corrections) =>
-            "Original: " +
-            entry.input +
-            "\n\n" +
-            "Corrected: " +
-            entry.corrected +
-            "\n\n" +
-            corrections
-              .map(
-                (correction) =>
-                  "- " + correction.correction + "\n" + correction.explanation
-              )
-              .join("\n")
-          }
-          onCopy={copyToClipboard}
-        />
-      )} */}
     </div>
   );
 }
