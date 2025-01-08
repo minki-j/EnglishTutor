@@ -1,0 +1,32 @@
+{
+    "corrections": [
+        {
+            "input": "my work time will be 9-5.",
+            "correctedText": "my working hours will be 9-5.",
+            "corrections": [
+                {
+                    "correction": "work time -> working hours",
+                    "explanation": "\"work time\" is slightly awkward. Native speakers more commonly use phrases like \"working hours\" or \"hours of work\"."
+                }
+            ]
+        },
+        {
+            "input": "I apologize for not being able to show up today’s meeting. My parents in law visited us from Edmonton today and I got carried away and forgot the meeting. I’m so sorry for that.",
+            "correctedText": "I apologize for missing today’s meeting. My parents-in-law visited us from Edmonton earlier today, and I got caught up and forgot about the meeting. I’m so sorry for that.",
+            "corrections": [
+                {
+                    "correction": "apologize for not being able to show up -> apologize for missing",
+                    "explanation": "The phrase \"not being able to show up\" is slightly awkward. Native speakers more commonly use phrases like \"not showing up\" or \"not being available\"."
+                },
+                {
+                    "correction": "today -> earlier today",
+                    "explanation": "adding think kind of subtle time reference makes the sentence smoother that aligns with conversational flow and clarifies when the event occurred"
+                },
+                {
+                    "correction": "carried away -> caught up",
+                    "explanation": "The phrase \"carried away\" is slightly awkward. Native speakers more commonly use \"caught up\"."
+                }
+            ]
+        }
+    ]
+}
