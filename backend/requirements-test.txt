@@ -1,0 +1,5 @@
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+mongomock-motor==0.0.21
+motor==3.6.0
