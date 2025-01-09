@@ -40,7 +40,7 @@ async def health_check():
 
 
 @app.websocket("/ws/correction")
-async def tutor_ws(websocket: WebSocket):
+async def correction_ws(websocket: WebSocket):
     """
     correct the provided input and provide explanations for corrections.
     """
@@ -48,15 +48,13 @@ async def tutor_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = data.get("type")
+        type = "correction"
         input = data.get("input")
         user_id = data.get("user_id")
 
-        if not type or not input or not user_id:
+        if not input or not user_id:
             error_msg = (
-                "No type provided"
-                if not type
-                else "No text provided" if not input else "No user ID provided"
+                "No text provided" if not input else "No user ID provided"
             )
             await websocket.send_json({"error": error_msg})
             return
@@ -96,7 +94,6 @@ async def tutor_ws(websocket: WebSocket):
         result_dict = result.model_dump()
         result_dict["_id"] = result_dict.pop("id")
         await main_db.results.insert_one(result_dict)
-        print("Save result to MongoDB")
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
@@ -107,7 +104,7 @@ async def tutor_ws(websocket: WebSocket):
 
 
 @app.websocket("/ws/vocabulary")
-async def tutor_ws(websocket: WebSocket):
+async def vocabulary_ws(websocket: WebSocket):
     """
     correct the provided input and provide explanations for corrections.
     """
@@ -115,15 +112,13 @@ async def tutor_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = data.get("type")
+        type = "vocabulary"
         input = data.get("input")
         user_id = data.get("user_id")
 
-        if not type or not input or not user_id:
+        if not input or not user_id:
             error_msg = (
-                "No type provided"
-                if not type
-                else "No text provided" if not input else "No user ID provided"
+                "No text provided" if not input else "No user ID provided"
             )
             await websocket.send_json({"error": error_msg})
             return
@@ -179,7 +174,7 @@ async def tutor_ws(websocket: WebSocket):
 
 
 @app.websocket("/ws/breakdown")
-async def tutor_ws(websocket: WebSocket):
+async def breakdown_ws(websocket: WebSocket):
     """
     correct the provided input and provide explanations for corrections.
     """
@@ -187,15 +182,13 @@ async def tutor_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = data.get("type")
+        type = "breakdown"
         input = data.get("input")
         user_id = data.get("user_id")
 
-        if not type or not input or not user_id:
+        if not input or not user_id:
             error_msg = (
-                "No type provided"
-                if not type
-                else "No text provided" if not input else "No user ID provided"
+                "No text provided" if not input else "No user ID provided"
             )
             await websocket.send_json({"error": error_msg})
             return

@@ -149,7 +149,6 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
 
       websocket.send(
         JSON.stringify({
-          type: type,
           input: currentText,
           user_id: session?.user?.id || "temporary_user",
         })
