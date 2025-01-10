@@ -18,8 +18,6 @@ export default function ErrorPage() {
   const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async () => {
-    console.log("handleSubmit");
-
     try {
       const response = await fetch('/api/error-report', {
         method: 'POST',
@@ -43,9 +41,7 @@ export default function ErrorPage() {
         {emailSent ? <div className="flex flex-col space-y-6">
           <p style={{ color: "black" }} className="text-center ">Email sent successfully. You can try the app without logging in for now.</p>
           <Button variant="secondary" onClick={async () => {
-            console.log("Try the app");
             await signIn("temporary").then(() => {
-              console.log("Signed in with temp user");
               redirect("/");
             });
           }}>Try the app</Button>

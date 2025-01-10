@@ -66,12 +66,7 @@ export const authOptions: NextAuthOptions = {
           console.error("Error during sign in:", error);
           return false;
         }
-      }
-      
-      if (account?.provider === "temporary") {
-        console.log("set a temporary user");
-      }
-        
+      }        
       return true;
     },
     async session({ session, token }) {      

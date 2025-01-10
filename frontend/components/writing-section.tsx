@@ -83,7 +83,6 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
   ) => {
     websocket.onmessage = async (event) => {
       const response = JSON.parse(event.data);
-      console.log("response: ", response);
 
       if (response.error) {
         // remove default entry when there is an error
@@ -154,7 +153,6 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
         })
       );
     } catch (error) {
-      console.log("WebSocket close at catch");
       if (websocket.readyState !== WebSocket.CLOSED) {
         websocket.close();
       }
@@ -181,22 +179,24 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as ICorrection;
 
+    let updates = { ...existingEntry };
     for (const [key, value] of Object.entries(response)) {
       if (key === "correction") {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
+        updates = {
+          ...updates,
           corrections: [
-            ...(existingEntry.corrections || []),
+            ...(updates.corrections || []),
             response.correction,
           ],
-        } as ICorrection;
+        };
       } else {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
+        updates = {
+          ...updates,
           [key]: value,
-        } as ICorrection;
+        };
       }
     }
+    updatedEntries[existingEntryIndex] = updates as ICorrection;
     return updatedEntries;
   };
 
@@ -208,23 +208,25 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as IVocabulary;
 
+    let updates = { ...existingEntry };
     for (const [key, value] of Object.entries(response)) {
       if (key === "example") {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
+        updates = {
+          ...updates,
           examples: [
-            ...((updatedEntries[existingEntryIndex] as IVocabulary).examples ||
-              []),
+            ...(updates.examples || []),
             response.example,
           ],
-        } as IVocabulary;
+        };
       } else {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
+        updates = {
+          ...updates,
           [key]: value,
-        } as IVocabulary;
+        };
       }
     }
+    
+    updatedEntries[existingEntryIndex] = updates as IVocabulary;
     return updatedEntries;
   };
 
@@ -236,28 +238,26 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as IBreakdown;
 
+    let updates = { ...existingEntry };
     for (const [key, value] of Object.entries(response)) {
       if (key === "breakdown") {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
-          breakdown:
-            ((updatedEntries[existingEntryIndex] as IBreakdown).breakdown ||
-              "") + response.breakdown,
-        } as IBreakdown;
+        updates = {
+          ...updates,
+          breakdown: (updates.breakdown || "") + response.breakdown,
+        };
       } else if (key === "paraphrase") {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
-          paraphrase:
-            ((updatedEntries[existingEntryIndex] as IBreakdown).paraphrase ||
-              "") + response.paraphrase,
-        } as IBreakdown;
+        updates = {
+          ...updates,
+          paraphrase: (updates.paraphrase || "") + response.paraphrase,
+        };
       } else {
-        updatedEntries[existingEntryIndex] = {
-          ...existingEntry,
+        updates = {
+          ...updates,
           [key]: value,
-        } as IBreakdown;
+        };
       }
     }
+    updatedEntries[existingEntryIndex] = updates as IBreakdown;
     return updatedEntries;
   };
 

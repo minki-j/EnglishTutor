@@ -13,7 +13,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log('Revalidating path:', path);
     revalidatePath(path, 'page');
 
     return NextResponse.json({ revalidated: true, now: Date.now() });
