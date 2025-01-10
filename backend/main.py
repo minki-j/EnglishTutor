@@ -33,6 +33,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://backend-production-c134.up.railway.app",
+        "https://englishtutor-production.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
