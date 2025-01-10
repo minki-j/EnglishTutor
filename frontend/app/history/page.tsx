@@ -71,7 +71,8 @@ export default async function HistoryPage({
         case "breakdown":
           return {
             ...baseFields,
-            breakdown: doc.breakdown!
+            breakdown: doc.breakdown!,
+            paraphrase: doc.paraphrase!
           } as IBreakdown;
         default:
           throw new Error(`Unknown type: ${doc.type}`);
