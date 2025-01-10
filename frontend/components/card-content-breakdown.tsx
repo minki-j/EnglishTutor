@@ -12,18 +12,23 @@ export function CardContentBreakdown({ entry, copyToClipboard }: Props) {
       <CardSection
         title="Original"
         content={entry.input}
-        onCopy={copyToClipboard}
       />
       <CardSection
         title="Paraphrase"
         content={entry.paraphrase ?? ""}
-        onCopy={copyToClipboard}
       />
       <CardSection
         title="Breakdown"
+        variant="string"
         content={entry.breakdown ?? ""}
-        onCopy={copyToClipboard}
       />
+      {entry.extraQuestions?.length > 0 && (
+        <CardSection
+          title="Extra Questions"
+          variant="extraQuestionList"
+          content={entry.extraQuestions ?? ""}
+        />
+      )}
     </div>
   );
 }

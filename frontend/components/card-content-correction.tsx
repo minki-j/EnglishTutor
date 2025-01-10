@@ -12,33 +12,23 @@ export function CardContentCorrection({ entry, copyToClipboard }: Props) {
       <CardSection
         title="Corrected"
         content={entry.correctedText}
-        onCopy={copyToClipboard}
       />
       <CardSection
         title="Original"
         content={entry.input}
-        onCopy={copyToClipboard}
       />
       <CardSection
         title="Explanations"
         content={entry.corrections}
-        variant="list"
-        formatListForCopy={() =>
-          "Original: " +
-          entry.input +
-          "\n\n" +
-          "Corrected: " +
-          entry.correctedText +
-          "\n\n" +
-          entry.corrections
-            .map(
-              (correction) =>
-                "- " + correction.correction + "\n" + correction.explanation
-            )
-            .join("\n")
-        }
-        onCopy={copyToClipboard}
+        variant="correctionList"
       />
+      {entry.extraQuestions?.length > 0 && (
+        <CardSection
+          title="Extra Questions"
+          variant="extraQuestionList"
+          content={entry.extraQuestions ?? ""}
+        />
+      )}
     </div>
   );
 }

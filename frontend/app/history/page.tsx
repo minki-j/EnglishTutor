@@ -51,7 +51,8 @@ export default async function HistoryPage({
         type: doc.type,
         userId: doc.userId,
         input: doc.input,
-        createdAt: doc.createdAt
+        createdAt: doc.createdAt,
+        extraQuestions: doc.extraQuestions
       } as const;
 
       switch (doc.type) {

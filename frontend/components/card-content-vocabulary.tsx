@@ -12,31 +12,23 @@ export function CardContentVocabulary({ entry, copyToClipboard }: Props) {
       <CardSection
         title="Vocabulary"
         content={entry.input}
-        onCopy={copyToClipboard}
       />
       <CardSection
         title="Definition"
         content={entry.definition ?? ""}
-        onCopy={copyToClipboard}
       />
       {entry.examples?.length > 0 && (
         <CardSection
           title="Examples"
           content={entry.examples}
-          variant="list"
-          formatListForCopy={(examples) =>
-            "Original: " +
-            entry.input +
-            "\n\n" +
-            "Examples: " +
-            entry.examples
-              .map(
-                (example) =>
-                  "- " + example
-              )
-              .join("\n")
-          }
-          onCopy={copyToClipboard}
+          variant="stringList"
+        />
+      )}
+      {entry.extraQuestions?.length > 0 && (
+        <CardSection
+          title="Extra Questions"
+          variant="extraQuestionList"
+          content={entry.extraQuestions}
         />
       )}
     </div>

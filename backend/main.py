@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
 from contextlib import asynccontextmanager
 import inspect
+from bson import ObjectId
 
 from app.workflows.correction import g as correction_graph
 from app.workflows.vocabulary import g as vocabulary_graph
@@ -11,6 +13,10 @@ from app.workflows.breakdown import g as breakdown_graph
 from app.db.mongodb import ping_mongodb, main_db
 from app.utils.compile_graph import compile_graph_with_async_checkpointer
 from app.models import CorrectionItem, Correction, Vocabulary, Breakdown
+
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from app.llm import chat_model
 
 
 @asynccontextmanager
@@ -53,9 +59,7 @@ async def correction_ws(websocket: WebSocket):
         user_id = data.get("user_id")
 
         if not input or not user_id:
-            error_msg = (
-                "No text provided" if not input else "No user ID provided"
-            )
+            error_msg = "No text provided" if not input else "No user ID provided"
             await websocket.send_json({"error": error_msg})
             return
 
@@ -90,12 +94,12 @@ async def correction_ws(websocket: WebSocket):
 
             await websocket.send_json(response_data)
 
-
         result_dict = result.model_dump()
         result_dict["_id"] = result_dict.pop("id")
         await main_db.results.insert_one(result_dict)
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/correction: ", error_trace)
         await websocket.send_json({"error": str(e)})
@@ -117,9 +121,7 @@ async def vocabulary_ws(websocket: WebSocket):
         user_id = data.get("user_id")
 
         if not input or not user_id:
-            error_msg = (
-                "No text provided" if not input else "No user ID provided"
-            )
+            error_msg = "No text provided" if not input else "No user ID provided"
             await websocket.send_json({"error": error_msg})
             return
 
@@ -166,6 +168,7 @@ async def vocabulary_ws(websocket: WebSocket):
         await main_db.results.insert_one(result_dict)
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/vocabulary:", error_trace)
         await websocket.send_json({"error": str(e)})
@@ -187,9 +190,7 @@ async def breakdown_ws(websocket: WebSocket):
         user_id = data.get("user_id")
 
         if not input or not user_id:
-            error_msg = (
-                "No text provided" if not input else "No user ID provided"
-            )
+            error_msg = "No text provided" if not input else "No user ID provided"
             await websocket.send_json({"error": error_msg})
             return
 
@@ -240,11 +241,90 @@ async def breakdown_ws(websocket: WebSocket):
         await main_db.results.insert_one(result_dict)
     except Exception as e:
         import traceback
+
         error_trace = traceback.format_exc()
         print("Error on ws/breakdown: ", error_trace)
         await websocket.send_json({"error": str(e)})
     finally:
         await websocket.close()
+
+
+@app.post("/further-questions")
+async def further_questions(data: dict):
+    async def update_db(result_id: str, question: str, response_text: str):
+        result_id_obj = ObjectId(result_id)
+        result = await main_db.results.find_one({"_id": result_id_obj})
+
+        if not result:
+            raise HTTPException(
+                status_code=404, detail=f"Result with id {result_id} not found"
+            )
+            
+        if "extraQuestions" not in result:
+            result["extraQuestions"] = []
+        result["extraQuestions"].append(
+            {
+                "question": question,
+                "answer": response_text,
+            }
+        )
+        update_result = await main_db.results.update_one(
+            {"_id": result_id_obj}, {"$set": {"extraQuestions": result["extraQuestions"]}}
+        )
+        if not update_result.matched_count:
+            raise HTTPException(
+                status_code=404, detail=f"Result with id {result_id} not found during update"
+            )
+        if not update_result.modified_count:
+            raise HTTPException(
+                status_code=400, detail=f"Result with id {result_id} not updated"
+            )
+
+    response = (
+        ChatPromptTemplate.from_template(
+            """
+You are a experienced ESL tutor. Your student asked {type} question. 
+
+Question: {input}. 
+
+You answered back to the student with the following explanation: 
+{context}
+
+Then the student asked you another question: {question}
+
+Now, it's your turn to answer back to the student about the latest question.
+
+Don't include "output: " or "here is the answer: ". Only return the answer.
+"""
+        )
+        | chat_model
+        | StrOutputParser()
+    ).astream(
+        {
+            "type": data.get("type"),
+            "input": data.get("input"),
+            "context": data.get("context"),
+            "question": data.get("question"),
+        }
+    )
+
+    # collect the response and update the DB
+    async def response_and_update():
+        response_text = ""
+        try:
+            async for chunk in response:
+                response_text += chunk
+                yield chunk
+            
+            # After streaming is complete, update the database
+            await update_db(data.get("resultId"), data.get("question"), response_text)
+        except Exception as e:
+            # Log the error but don't interrupt the stream
+            print(f"Error updating database: {str(e)}")
+            raise
+
+    return StreamingResponse(response_and_update(), status_code=200)
+
 
 if __name__ == "__main__":
     import uvicorn

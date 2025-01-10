@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { IExtraQuestion } from "./ExtraQuestions";
+
 export interface IVocabulary {
   id: string;
   type: "vocabulary";
@@ -7,6 +9,7 @@ export interface IVocabulary {
   input: string;
   definition: string;
   examples: string[];
+  extraQuestions: IExtraQuestion[];
   createdAt: Date;
 }
 
@@ -29,6 +32,15 @@ const VocabularySchema = new mongoose.Schema<IVocabulary>({
   },
   examples: {
     type: [String],
+    required: true,
+  },
+  extraQuestions: {
+    type: [
+      {
+        question: String,
+        answer: String,
+      },
+    ],
     required: true,
   },
   createdAt: {

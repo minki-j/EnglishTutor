@@ -28,7 +28,7 @@ export function HistoryList({ initialEntries, isLoading = false }: HistoryListPr
   return (
     <div className="space-y-4">
       {entries.map((entry) => (
-        <ResultCard key={entry.id} entry={entry} onDelete={handleDelete} />
+        <ResultCard key={entry.id} entry={entry} onDelete={handleDelete} setEntries={setEntries} />
       ))}
       {entries.length === 0 && (
         <p className="text-muted-foreground">No history found.</p>

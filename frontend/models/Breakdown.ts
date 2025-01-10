@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+import { IExtraQuestion } from "./ExtraQuestions";
+
 export interface IBreakdown {
   id: string;
   type: "breakdown";
@@ -7,6 +9,7 @@ export interface IBreakdown {
   input: string;
   paraphrase: string;
   breakdown: string;
+  extraQuestions: IExtraQuestion[];
   createdAt: Date;
 }
 
@@ -31,6 +34,12 @@ const BreakdownSchema = new mongoose.Schema<IBreakdown>({
     type: String,
     required: true,
   },
+  extraQuestions: [
+    {
+      question: String,
+      answer: String,
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,

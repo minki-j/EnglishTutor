@@ -24,6 +24,10 @@ class CorrectionItem(BaseModel):
     correction: str
     explanation: str
 
+class ExtraQuestion(BaseModel):
+    question: str
+    answer: str
+    
 class Correction(BaseModel):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     type: str = "correction"
@@ -31,6 +35,7 @@ class Correction(BaseModel):
     input: str
     correctedText: str = Field(default="")
     corrections: List[CorrectionItem] = Field(default_factory=list)
+    extraQuestions: List[ExtraQuestion] = Field(default_factory=list)
     createdAt: datetime = Field(default_factory=lambda: datetime.now(pytz.timezone('US/Eastern')), frozen=True)
 
     class Config:

@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 
+import { IExtraQuestion } from "./ExtraQuestions";
+
 export interface ICorrectionItem {
   correction: string;
   explanation: string;
 }
+
 
 export interface ICorrection {
   id: string;
@@ -12,6 +15,7 @@ export interface ICorrection {
   input: string;
   correctedText: string;
   corrections: ICorrectionItem[];
+  extraQuestions: IExtraQuestion[];
   createdAt: Date;
 }
 
@@ -36,6 +40,12 @@ const CorrectionSchema = new mongoose.Schema<ICorrection>({
     {
       correction: String,
       explanation: String,
+    },
+  ],
+  extraQuestions: [
+    {
+      question: String,
+      answer: String,
     },
   ],
   createdAt: {

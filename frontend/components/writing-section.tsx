@@ -275,6 +275,11 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       }
     }
   };
+  const handleDelete = (id: string) => {
+    setEntries((prevEntries) =>
+      prevEntries.filter((entry) => entry.id !== id)
+    );
+  };
 
   return (
     <div className="space-y-8">
@@ -341,7 +346,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       </Card>
 
       {entries.length > 0 &&
-        entries.map((entry) => <ResultCard entry={entry} key={entry.id} />)}
+        entries.map((entry) => <ResultCard entry={entry} onDelete={handleDelete} setEntries={setEntries} key={entry.id} />)}
     </div>
   );
 }
