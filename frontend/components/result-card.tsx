@@ -27,6 +27,7 @@ type Props = {
 export function ResultCard({ entry, onDelete, setEntries }: Props) {
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -144,8 +145,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
       });
     });
 
-    const textarea = document.querySelector("textarea") as HTMLTextAreaElement;
-    textarea.value = "";
+    textareaRef.current!.value = "";
 
     const reader = res.body?.getReader();
     if (!reader) {
@@ -197,6 +197,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
             className="flex gap-2 items-center"
           >
             <Textarea
+              ref={textareaRef}
               placeholder="Got more questions?"
               className="min-h-[30px] overflow-hidden"
               name="question"
