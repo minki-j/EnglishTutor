@@ -13,7 +13,6 @@ import { ResultCard } from "./result-card";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
-import MDEditor from "@uiw/react-md-editor";
 
 type Entry = ICorrection | IVocabulary | IBreakdown;
 
@@ -171,10 +170,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     );
   };
 
-  const correctionEntryUpdateLogic = (
-    prev: Entry[],
-    response: any
-  ) => {
+  const correctionEntryUpdateLogic = (prev: Entry[], response: any) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as ICorrection;
@@ -184,10 +180,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       if (key === "correction") {
         updates = {
           ...updates,
-          corrections: [
-            ...(updates.corrections || []),
-            response.correction,
-          ],
+          corrections: [...(updates.corrections || []), response.correction],
         };
       } else {
         updates = {
@@ -210,10 +203,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     return updatedEntries;
   };
 
-  const vocabularyEntryUpdateLogic = (
-    prev: Entry[],
-    response: any
-  ) => {
+  const vocabularyEntryUpdateLogic = (prev: Entry[], response: any) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as IVocabulary;
@@ -223,10 +213,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       if (key === "example") {
         updates = {
           ...updates,
-          examples: [
-            ...(updates.examples || []),
-            response.example,
-          ],
+          examples: [...(updates.examples || []), response.example],
         };
       } else {
         updates = {
@@ -235,15 +222,12 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
         };
       }
     }
-    
+
     updatedEntries[existingEntryIndex] = updates as IVocabulary;
     return updatedEntries;
   };
 
-  const breakdownEntryUpdateLogic = (
-    prev: Entry[],
-    response: any
-  ) => {
+  const breakdownEntryUpdateLogic = (prev: Entry[], response: any) => {
     const existingEntryIndex = findEntryIndexById(prev, response.id);
     const updatedEntries = [...prev];
     const existingEntry = updatedEntries[existingEntryIndex] as IBreakdown;
@@ -271,7 +255,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
     return updatedEntries;
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       if (e.metaKey || e.ctrlKey) {
         e.preventDefault();
@@ -283,30 +267,65 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
         e.preventDefault();
         genericProcess("breakdown", breakdownEntryUpdateLogic);
       }
+    } else if ((e.metaKey || e.ctrlKey) && e.key === "b") {
+      e.preventDefault();
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText =
+        currentText.substring(0, start) +
+        "**" +
+        currentText.substring(start, end) +
+        "**" +
+        currentText.substring(end);
+
+      setCurrentText(newText);
+
+      // Restore selection after the update
+      setTimeout(() => {
+        textarea.selectionStart = start + 2;
+        textarea.selectionEnd = end + 2;
+      }, 0);
     }
   };
+
   const handleDelete = (id: string) => {
-    setEntries((prevEntries) =>
-      prevEntries.filter((entry) => entry.id !== id)
-    );
+    setEntries((prevEntries) => prevEntries.filter((entry) => entry.id !== id));
+  };
+
+  const generateInputPlaceholder = () => {
+    const placeholders: string[] = [
+      "What’s on your mind to learn today?",
+      "Mistakes are stepping stones to success—dare to learn!",
+      "Every step you take brings growth—keep going strong!",
+      "Curious minds grow faster—what’s your answer?",
+      "Your journey to fluency starts here—type your response!",
+      "Every word you write brings you closer to mastery—give it a try!",
+      "Challenge yourself—what’s your take on this?",
+      "Practice makes perfect—start typing now!",
+      "Learning happens one word at a time—share your thoughts!",
+      "Let your English skills shine—what’s your answer?",
+      "Small efforts lead to big progress—type away!",
+      "It’s okay to make mistakes—they help you improve!",
+      "What’s your perspective? Let’s hear it!",
+      "Stay curious and keep practicing—what’s your response?",
+      "Take a deep breath, and show your best English!",
+      "Think, type, and grow—what’s your answer today?",
+      "Ready to express yourself? Start typing!",
+    ];
+    return placeholders[Math.floor(Math.random() * placeholders.length)];
   };
 
   return (
     <div className="space-y-8">
       <Card className="p-6">
-        <MDEditor
+        <Textarea
           value={currentText}
-          onChange={(value) => setCurrentText(value || "")}
-          preview="edit"
-          hideToolbar={true}
-          height="100%"
-          className="mb-4 min-h-[200px]"
-          textareaProps={{
-            placeholder: "",
-            onKeyDown: handleKeyDown,
-            autoFocus: autoFocus,
-            style: { height: "100%" },
-          }}
+          onChange={(e) => setCurrentText(e.target.value)}
+          className="mb-4 min-h-[100px] text-lg"
+          placeholder={generateInputPlaceholder()}
+          onKeyDown={handleKeyDown}
+          autoFocus={autoFocus}
         />
         <div className="grid grid-cols-3 gap-4">
           <Button
@@ -356,7 +375,14 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
       </Card>
 
       {entries.length > 0 &&
-        entries.map((entry) => <ResultCard entry={entry} onDelete={handleDelete} setEntries={setEntries} key={entry.id} />)}
+        entries.map((entry) => (
+          <ResultCard
+            entry={entry}
+            onDelete={handleDelete}
+            setEntries={setEntries}
+            key={entry.id}
+          />
+        ))}
     </div>
   );
 }
