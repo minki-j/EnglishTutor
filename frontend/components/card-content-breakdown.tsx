@@ -10,7 +10,7 @@ export function CardContentBreakdown({ entry, copyToClipboard }: Props) {
   return (
     <div className="space-y-4 flex-[0.9]">
       <CardSection
-        title="Original"
+        title="Sentence"
         content={entry.input}
       />
       <CardSection
