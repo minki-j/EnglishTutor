@@ -5,6 +5,7 @@ import { ICorrectionItem } from "@/models/Correction";
 import { IExtraQuestion } from "@/models/ExtraQuestions";
 import ReactMarkdown from "react-markdown";
 import { Spinner } from "./ui/spinner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Props {
   title: string;
@@ -132,11 +133,25 @@ const StringContent = ({
 );
 
 export function CardSection({ title, content, variant = "string" }: Props) {
+  const { toast } = useToast();
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
+      toast({
+        title: "Copied",
+        description: "Copied to clipboard",
+        variant: "default",
+        duration: 2000,
+      });
     } catch (error) {
       console.error("Failed to copy text to clipboard:", error);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+        duration: 2000,
+      });
     }
   };
 
