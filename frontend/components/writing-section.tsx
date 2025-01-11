@@ -109,7 +109,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
 
   const genericProcess = async (
     type: "correction" | "vocabulary" | "breakdown",
-    correctionEntryUpdateLogic: (prev: Entry[], response: any) => Entry[]
+    entryUpdateLogic: (prev: Entry[], response: any) => Entry[]
   ) => {
     if (!currentText.trim()) {
       toast({
@@ -142,7 +142,7 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
         ),
       ]);
 
-      assignOnMessageHanlder(websocket, correctionEntryUpdateLogic);
+      assignOnMessageHanlder(websocket, entryUpdateLogic);
 
       setCurrentText("");
 
@@ -194,6 +194,16 @@ export function WritingSection({ autoFocus = true }: { autoFocus?: boolean }) {
           ...updates,
           [key]: value,
         };
+      }
+      if (key === "correctedText") {
+        navigator.clipboard.writeText(response.correctedText).then(() => {
+          toast({
+            title: "Copied",
+            description: "Copied corrected to clipboard",
+            variant: "default",
+            duration: 2000,
+          });
+        });
       }
     }
     updatedEntries[existingEntryIndex] = updates as ICorrection;
