@@ -1,16 +1,19 @@
 import mongoose from "mongoose";
 
 import { IExtraQuestion } from "./ExtraQuestions";
+import { EntryType } from "./EntryType";
 
 export interface ICorrectionItem {
   correction: string;
   explanation: string;
 }
 
-
+/**
+ * Represents a correction entry
+ */
 export interface ICorrection {
   id: string;
-  type: "correction";
+  type: EntryType;
   userId: string;
   input: string;
   correctedText: string;
@@ -23,6 +26,7 @@ const CorrectionSchema = new mongoose.Schema<ICorrection>({
   type: {
     type: String,
     required: true,
+    enum: [EntryType.CORRECTION],
   },
   userId: {
     type: String,

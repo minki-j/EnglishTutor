@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
-
+import { EntryType } from "./EntryType";
 import { IExtraQuestion } from "./ExtraQuestions";
 
 export interface IVocabulary {
   id: string;
-  type: "vocabulary";
+  type: EntryType;
   userId: string;
   input: string;
   definition: string;
@@ -17,6 +17,7 @@ const VocabularySchema = new mongoose.Schema<IVocabulary>({
   type: {
     type: String,
     required: true,
+    enum: [EntryType.VOCABULARY],
   },
   userId: {
     type: String,

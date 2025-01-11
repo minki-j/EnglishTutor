@@ -12,7 +12,14 @@ from app.workflows.breakdown import g as breakdown_graph
 
 from app.db.mongodb import ping_mongodb, main_db
 from app.utils.compile_graph import compile_graph_with_async_checkpointer
-from app.models import CorrectionItem, Correction, Vocabulary, Breakdown
+from app.models import (
+    CorrectionItem,
+    Correction,
+    Vocabulary,
+    Breakdown,
+    General,
+    ResponseType,
+)
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
@@ -55,7 +62,7 @@ async def correction_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = "correction"
+        type = ResponseType.CORRECTION
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -117,7 +124,7 @@ async def vocabulary_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = "vocabulary"
+        type = ResponseType.VOCABULARY
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -186,7 +193,7 @@ async def breakdown_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = "breakdown"
+        type = ResponseType.BREAKDOWN
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -250,6 +257,65 @@ async def breakdown_ws(websocket: WebSocket):
         await websocket.close()
 
 
+@app.websocket("/ws/general")
+async def general_ws(websocket: WebSocket):
+    """
+    answer general questions
+    """
+    try:
+        await websocket.accept()
+        data = await websocket.receive_json()
+
+        type = ResponseType.GENERAL
+        input = data.get("input")
+        user_id = data.get("user_id")
+
+        if not input or not user_id:
+            error_msg = "No text provided" if not input else "No user ID provided"
+            await websocket.send_json({"error": error_msg})
+            return
+
+        streaming = (
+            ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You are a helpful assistant in AI English Tutor app which helps users to learn English. Most of the users in this platform are not native Enlgish speaker. When you answer to the users, you should explain with easy vocabulary and grammar. Giving an example or explain the history of the word or phrase would be a good practice. Try to make your response concise so that the user can read it quickly. You can use Markdown format in your response."),
+                    ("human", "{input}"),
+                ]
+            )
+            | chat_model
+        ).astream({"input": input})
+
+        result = General(userId=user_id, input=input)
+        result_id = result.id
+        result_id_str = str(result_id)
+
+        full_response = ""
+        async for chunk in streaming:
+            full_response += chunk.content
+            await websocket.send_json(
+                {
+                    "id": result_id_str,
+                    "type": type,
+                    "answer": chunk.content,
+                }
+            )
+
+        result.answer = full_response
+
+        result_dict = result.model_dump()
+        result_dict["_id"] = result_dict.pop("id")
+        await main_db.results.insert_one(result_dict)
+
+    except Exception as e:
+        import traceback
+
+        error_trace = traceback.format_exc()
+        print("Error on ws/breakdown: ", error_trace)
+        await websocket.send_json({"error": str(e)})
+    finally:
+        await websocket.close()
+
+
 @app.post("/further-questions")
 async def further_questions(data: dict):
     async def update_db(result_id: str, question: str, response_text: str):
@@ -260,7 +326,7 @@ async def further_questions(data: dict):
             raise HTTPException(
                 status_code=404, detail=f"Result with id {result_id} not found"
             )
-            
+
         if "extraQuestions" not in result:
             result["extraQuestions"] = []
         result["extraQuestions"].append(
@@ -270,18 +336,20 @@ async def further_questions(data: dict):
             }
         )
         update_result = await main_db.results.update_one(
-            {"_id": result_id_obj}, {"$set": {"extraQuestions": result["extraQuestions"]}}
+            {"_id": result_id_obj},
+            {"$set": {"extraQuestions": result["extraQuestions"]}},
         )
         if not update_result.matched_count:
             raise HTTPException(
-                status_code=404, detail=f"Result with id {result_id} not found during update"
+                status_code=404,
+                detail=f"Result with id {result_id} not found during update",
             )
         if not update_result.modified_count:
             raise HTTPException(
                 status_code=400, detail=f"Result with id {result_id} not updated"
             )
 
-    response = (
+    streaming = (
         ChatPromptTemplate.from_template(
             """
 You are a experienced ESL tutor. Your student asked {type} question. 
@@ -313,10 +381,10 @@ Don't include "output: " or "here is the answer: ". Only return the answer.
     async def response_and_update():
         response_text = ""
         try:
-            async for chunk in response:
+            async for chunk in streaming:
                 response_text += chunk
                 yield chunk
-            
+
             # After streaming is complete, update the database
             await update_db(data.get("resultId"), data.get("question"), response_text)
         except Exception as e:

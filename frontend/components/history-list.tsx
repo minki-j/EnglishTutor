@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
+
+import { Entry } from "@/models/Entry";
+
 import { ResultCard } from "./result-card";
-import { ICorrection } from "@/models/Correction";
-import { IVocabulary } from "@/models/Vocabulary";
-import { IBreakdown } from "@/models/Breakdown";
 import { HistorySkeleton } from "./history-skeleton"; // assuming HistorySkeleton is defined in this file
 
-type Entry = ICorrection | IVocabulary | IBreakdown;
 
 interface HistoryListProps {
   initialEntries: Entry[];

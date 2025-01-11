@@ -5,18 +5,19 @@ import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
+import { Entry } from "@/models/Entry";
+import { EntryType } from "@/models/EntryType";
+import { IGeneral } from "@/models/General";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
-import { IExtraQuestion } from "@/models/ExtraQuestions";
 
 import { CardContentCorrection } from "./card-content-correction";
 import { CardContentVocabulary } from "./card-content-vocabulary";
 import { CardContentBreakdown } from "./card-content-breakdown";
-
-type Entry = ICorrection | IVocabulary | IBreakdown;
+import { CardContentGeneral } from "./card-content-general";
 
 type Props = {
   entry: Entry;
@@ -77,25 +78,31 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
     }
   };
 
-  const cardContent = (entry: ICorrection | IVocabulary | IBreakdown) => {
-    if (entry.type === "correction") {
+  const cardContent = (entry: Entry) => {
+    if (entry.type === EntryType.CORRECTION) {
       return (
         <CardContentCorrection
-          entry={entry}
+          entry={entry as ICorrection}
           copyToClipboard={copyToClipboard}
         />
       );
-    } else if (entry.type === "vocabulary") {
+    } else if (entry.type === EntryType.VOCABULARY) {
       return (
         <CardContentVocabulary
-          entry={entry}
+          entry={entry as IVocabulary}
           copyToClipboard={copyToClipboard}
         />
       );
-    } else if (entry.type === "breakdown") {
+    } else if (entry.type === EntryType.BREAKDOWN) {
       return (
-        <CardContentBreakdown entry={entry} copyToClipboard={copyToClipboard} />
+        <CardContentBreakdown entry={entry as IBreakdown} copyToClipboard={copyToClipboard} />
       );
+    } else if (entry.type === EntryType.GENERAL) {
+      return (
+        <CardContentGeneral entry={entry as IGeneral} copyToClipboard={copyToClipboard} />
+      );
+    } else {
+      throw new Error("Invalid entry type " + entry.type);
     }
   };
 
@@ -179,18 +186,27 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
     }
   }
 
+  const getBackgroundColor = () => {
+    switch (entry.type) {
+      case EntryType.CORRECTION:
+        return "bg-[hsl(var(--chart-1)_/_0.1)]";
+      case EntryType.VOCABULARY:
+        return "bg-[hsl(var(--chart-2)_/_0.1)]";
+      case EntryType.BREAKDOWN:
+        return "bg-[hsl(var(--chart-4)_/_0.1)]";
+      case EntryType.GENERAL:
+        return "bg-[hsl(var(--chart-5)_/_0.1)]";
+      default:
+        return "bg-none";
+    }
+  };
+
   return (
     <Card
-      className={`p-6 relative ${
-        entry.type === "correction"
-          ? "bg-[hsl(var(--chart-1)_/_0.1)]"
-          : entry.type === "vocabulary"
-          ? "bg-[hsl(var(--chart-2)_/_0.1)]"
-          : "bg-[hsl(var(--chart-4)_/_0.1)]"
-      }`}
+      className={`p-6 relative ${getBackgroundColor()}`}
     >
       <div className="flex justify-between items-stretch">
-        <div className="flex-[0.9] flex flex-col space-y-6 ">
+        <div className="flex-[0.95] flex flex-col space-y-6 ">
           {cardContent(entry)}
           <form
             action={askFollowUpQuestion}
@@ -220,7 +236,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
             </Button>
           </form>
         </div>
-        <div className="flex-[0.1] flex flex-col justify-between items-end">
+        <div className="flex-[0.05] flex flex-col justify-between items-end">
           <span className="text-xs text-muted-foreground text-right whitespace-nowrap overflow-x-auto">
             {entry.createdAt
               ? entry.createdAt.toLocaleDateString("en-US", {

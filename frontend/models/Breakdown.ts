@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 
 import { IExtraQuestion } from "./ExtraQuestions";
+import { EntryType } from "./EntryType";
 
 export interface IBreakdown {
   id: string;
-  type: "breakdown";
+  type: EntryType;
   userId: string;
   input: string;
   paraphrase: string;
@@ -16,6 +17,7 @@ export interface IBreakdown {
 const BreakdownSchema = new mongoose.Schema<IBreakdown>({
   type: {
     type: String,
+    enum: [EntryType.BREAKDOWN],
     required: true,
   },
   userId: {
