@@ -56,20 +56,23 @@ const ExtraQuestionListContent = ({
   onCopy?: (text: string) => void;
 }) => {
   return (
-    <div className="relative group cursor-pointer hover:bg-muted/50 pr-8 flex flex-col space-y-1">
+    <ul className="list-disc pl-4 space-y-1">
       {content.map((item, index) => (
-        <div
+        <li
           key={index}
-          onClick={() => onCopy?.(item.question + "\n" + item.answer)}
+          className="group relative cursor-pointer hover:bg-muted/50"
+          onClick={() => onCopy?.("Q. " + item.question + "\n" + item.answer)}
         >
-          <p className="font-medium">{item.question}</p>
-          <p className="text-sm text-muted-foreground mt-1">{item.answer}</p>
-        </div>
+          <div className="pr-8">
+            <p className="font-medium">Q. {item.question}</p>
+            <p className="text-sm text-muted-foreground mt-1">{item.answer}</p>
+          </div>
+          <div className="absolute right-0 top-0">
+            <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </li>
       ))}
-      <div className="absolute right-0 top-0">
-        <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
-    </div>
+    </ul>
   );
 };
 
