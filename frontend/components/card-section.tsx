@@ -32,9 +32,9 @@ const CorrectionListContent = ({
   content: ICorrectionItem[];
   onCopy?: (text: string) => void;
 }) => (
-  <div className="flex flex-col space-y-2">
+  <ul className="list-disc pl-4 space-y-1">
     {content.map((item, index) => (
-      <div
+      <li
         key={index}
         onClick={() => onCopy?.(item.correction + "\n" + item.explanation)}
         className="group relative cursor-pointer hover:bg-muted/50 pr-8"
@@ -44,9 +44,9 @@ const CorrectionListContent = ({
         <div className="absolute right-0 top-0">
           <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
-      </div>
+      </li>
     ))}
-  </div>
+  </ul>
 );
 
 const ExtraQuestionListContent = ({
@@ -57,7 +57,7 @@ const ExtraQuestionListContent = ({
   onCopy?: (text: string) => void;
 }) => {
   return (
-    <ul className="list-disc pl-4 space-y-1">
+    <ul className="pl-4 space-y-1">
       {content.map((item, index) => (
         <li
           key={index}
