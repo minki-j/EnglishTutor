@@ -8,6 +8,9 @@ import { client } from "@/lib/mongodb";
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
 import { IBreakdown } from "@/models/Breakdown";
+import { IGeneral } from "@/models/General";
+import { Entry } from "@/models/Entry";
+import { EntryType } from "@/models/EntryType";
 
 import { HistoryList } from "@/components/history-list";
 import { Button } from "@/components/ui/button";
@@ -56,24 +59,30 @@ export default async function HistoryPage({
       } as const;
 
       switch (doc.type) {
-        case "vocabulary":
+        case EntryType.VOCABULARY:
           return {
             ...baseFields,
             definition: doc.definition!,
             examples: doc.examples!
           } as IVocabulary;
-        case "correction":
+        case EntryType.CORRECTION:
           return {
             ...baseFields,
             correctedText: doc.correctedText!,
-            corrections: doc.corrections!
+            corrections: doc.corrections!,
           } as ICorrection;
-        case "breakdown":
+        case EntryType.BREAKDOWN:
           return {
             ...baseFields,
             breakdown: doc.breakdown!,
-            paraphrase: doc.paraphrase!
+            paraphrase: doc.paraphrase!,
           } as IBreakdown;
+        case EntryType.GENERAL:
+          return {
+            ...baseFields,
+            question: doc.question!,
+            answer: doc.answer!,
+          } as IGeneral;
         default:
           throw new Error(`Unknown type: ${doc.type}`);
       }
