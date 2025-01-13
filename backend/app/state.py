@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Annotated
+from typing import Annotated, Any
 from app.models import CorrectionItem
 from langgraph.graph.message import add_messages
 
@@ -7,21 +7,25 @@ from langgraph.graph.message import add_messages
 # ===========================================
 #                REDUCER FUNCTIONS
 # ===========================================
-def append(original: list, new: CorrectionItem):
-    original.append(new)
+def extend_list(original: list, new: list):
+    original.extend(new)
     return original
+
+def update_str(_, new: str):
+    return new
 
 
 # ===========================================
 #                    STATE
 # ===========================================
 class OutputState(BaseModel):
-    correctedText: str = Field(default="")
-    corrections: Annotated[list[CorrectionItem], append] = Field(default_factory=list)
-    definition: str = Field(default="")
-    examples: Annotated[list[str], append] = Field(default_factory=list)
+    correctedText: Annotated[str, update_str] = Field(default="")
+    corrections: Annotated[list, extend_list] = Field(default_factory=list)
+    vocabulary: Annotated[str, update_str] = Field(default="")
+    definition: Annotated[str, update_str] = Field(default="")
+    examples: Annotated[list, extend_list] = Field(default_factory=list)
     breakdown_stream_msg: Annotated[list, add_messages] = Field(default_factory=list)
-    breakdown: str = Field(default="")
+    breakdown: Annotated[str, update_str] = Field(default="")
 
 
 class InputState(BaseModel):

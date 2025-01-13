@@ -141,7 +141,8 @@ async def vocabulary_ws(websocket: WebSocket):
             input=input,
             aboutMe=aboutMe,
         )
-        workflow = await compile_graph_with_async_checkpointer(graph, type)
+        print("compile graph for ", type.value)
+        workflow = await compile_graph_with_async_checkpointer(graph, type.value)
 
         result_id = result.id
         result_id_str = str(result_id)
@@ -159,6 +160,11 @@ async def vocabulary_ws(websocket: WebSocket):
                 "id": result_id_str,
                 "type": type,
             }
+            if "vocabulary" in data.keys():
+                correctedInput = data["vocabulary"]
+                result.input = correctedInput
+                response_data["input"] = correctedInput
+
             if "definition" in data.keys():
                 definition = data["definition"]
                 result.definition = definition

@@ -13,9 +13,10 @@ from app.state import OverallState, InputState, OutputState
 from app.llm import chat_model
 from app.models import CorrectionItem
 
+
 def correct_input(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: correct_input")
-    
+
     corrected_input = (
         ChatPromptTemplate.from_template(
             """You are a experienced ESL tutor. Your student asked you to look at their Enlglish expression or writing. Here is what they showed you: {input}
@@ -36,9 +37,10 @@ As an ESL teacher and a native English speaker, think if there is any grammatica
         "correctedText": corrected_input,
     }
 
+
 def generate_explanation(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: generate_explanation")
-    
+
     class Goto(str, Enum):
         END = "__end__"
         GENERATE_EXPLANATION = "generate_explanation"
@@ -93,7 +95,10 @@ Important!!
             "correctedText": state.correctedText,
             "corrections": (
                 "\n".join(
-                    [f"{item.correction}: {item.explanation}" for item in state.corrections]
+                    [
+                        f"{item.correction}: {item.explanation}"
+                        for item in state.corrections
+                    ]
                 )
                 if len(state.corrections) > 0
                 else "There is no correction yet. This is your first correction."
@@ -104,9 +109,10 @@ Important!!
     writer({"correction": response.explanation})
 
     return Command(
-        update={"corrections": response.explanation},
+        update={"corrections": [response.explanation]},
         goto=response.goto.value,
     )
+
 
 g = StateGraph(OverallState, input=InputState, output=OutputState)
 g.add_edge(START, n(correct_input))
