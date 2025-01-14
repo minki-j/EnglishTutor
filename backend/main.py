@@ -59,7 +59,7 @@ class UserMiddleware(BaseHTTPMiddleware):
         return response
 
 
-async def get_current_user(websocket: WebSocket) -> Optional[dict]:
+async def get_current_user_websocket(websocket: WebSocket) -> Optional[dict]:
     # For WebSocket connections, we'll get the user_id from the query parameters
     user_id = websocket.query_params.get("user_id")
     if user_id:
@@ -74,9 +74,22 @@ async def get_current_user(websocket: WebSocket) -> Optional[dict]:
     return None
 
 
-app = FastAPI(title="English Tutor API", lifespan=lifespan)
+async def get_current_user_http(request: Request) -> Optional[dict]:
+    # For HTTP requests, we'll get the user_id from the request headers
+    user_id = request.query_params.get("user_id")
+    if user_id:
+        user = await main_db.users.find_one({"googleId": user_id})
+        if user:
+            return {
+                "id": user_id,
+                "aboutMe": user.get("aboutMe", ""),
+                "englishLevel": user.get("englishLevel", ""),
+                "motherTongue": user.get("motherTongue", ""),
+            }
+    return None
 
-app.add_middleware(UserMiddleware)
+
+app = FastAPI(title="English Tutor API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -89,6 +102,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(UserMiddleware)
 
 
 @app.get("/health")
@@ -103,7 +118,7 @@ async def correction_ws(websocket: WebSocket):
     """
     try:
         await websocket.accept()
-        user = await get_current_user(websocket)
+        user = await get_current_user_websocket(websocket)
         if not user:
             await websocket.send_json(
                 {"error": "No user ID provided or user not found"}
@@ -174,7 +189,7 @@ async def vocabulary_ws(websocket: WebSocket):
     """
     try:
         await websocket.accept()
-        user = await get_current_user(websocket)
+        user = await get_current_user_websocket(websocket)
         if not user:
             await websocket.send_json(
                 {"error": "No user ID provided or user not found"}
@@ -259,7 +274,7 @@ async def breakdown_ws(websocket: WebSocket):
     """
     try:
         await websocket.accept()
-        user = await get_current_user(websocket)
+        user = await get_current_user_websocket(websocket)
         if not user:
             await websocket.send_json(
                 {"error": "No user ID provided or user not found"}
@@ -341,7 +356,7 @@ async def general_ws(websocket: WebSocket):
     """
     try:
         await websocket.accept()
-        user = await get_current_user(websocket)
+        user = await get_current_user_websocket(websocket)
         if not user:
             await websocket.send_json(
                 {"error": "No user ID provided or user not found"}
@@ -403,7 +418,7 @@ async def general_ws(websocket: WebSocket):
 
 
 @app.post("/further-questions")
-async def further_questions(data: dict):
+async def further_questions(data: dict, user: dict = Depends(get_current_user_http)):
     async def update_db(result_id: str, question: str, response_text: str):
         result_id_obj = ObjectId(result_id)
         result = await main_db.results.find_one({"_id": result_id_obj})
@@ -438,7 +453,7 @@ async def further_questions(data: dict):
     streaming = (
         ChatPromptTemplate.from_template(
             """
-You are a experienced ESL tutor. Your student asked {type} question. 
+You are a experienced ESL tutor. Your student whose native language is {motherTongue} and English level is {englishLevel} asked {type} question. 
 
 Question: {input}. 
 
@@ -460,6 +475,8 @@ Don't include "output: " or "here is the answer: ". Only return the answer.
             "input": data.get("input"),
             "context": data.get("context"),
             "question": data.get("question"),
+            "englishLevel": user.get("englishLevel", "unknown") if user else "unknown",
+            "motherTongue": user.get("motherTongue", "unknown") if user else "unknown",
         }
     )
 

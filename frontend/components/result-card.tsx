@@ -116,7 +116,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
 
     const res = await fetch(
       new URL(
-        "further-questions",
+        `further-questions?user_id=${userId}`,
         process.env.NEXT_PUBLIC_BACKEND_URL
       ).toString(),
       {
