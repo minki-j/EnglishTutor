@@ -59,7 +59,11 @@ input: {input}
         writer(
             {
                 "example": state.vocabulary,
-                "extracted_word": state.vocabulary.split("**")[1],
+                "extracted_word": (
+                    state.vocabulary.split("**")[1]
+                    if "**" in state.vocabulary and len(state.vocabulary.split("**")) > 1
+                    else state.vocabulary  # fallback to the full string if not properly formatted
+                ),
             }
         )
         return {"examples": [state.vocabulary]} #! This gets duplicated when rendevous node is reached
