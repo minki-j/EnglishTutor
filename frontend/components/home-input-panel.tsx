@@ -107,7 +107,8 @@ export const HomeInputPanel = ({
   ) => {
     websocket.onmessage = async (event) => {
       const response = JSON.parse(event.data);
-      console.log(response);
+      // console.log(response);
+      
       if (response.error) {
         // remove default entry when there is an error
         setEntries((prev: Entry[]) => {
@@ -136,7 +137,6 @@ export const HomeInputPanel = ({
     entryUpdateLogic: (prev: Entry[], response: any) => Entry[]
   ) => {
     let input_text = currentText;
-    console.log("input_text", input_text);
     
     if (!currentText.trim()) {
       // When input is empty, try to read from clipboard
@@ -158,7 +158,6 @@ Excerpt From`)
 Excerpt From`
           )[0]
           .slice(1);
-        console.log("input_text", input_text);
       } else {
         toast({
           title: "Error",

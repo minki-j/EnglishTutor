@@ -24,14 +24,14 @@ export async function DELETE(
     });
 
     if (!result) {
-      return new NextResponse("Correction not found", { status: 404 });
+      return new NextResponse("Document not found", { status: 404 });
     }
 
     await collection.deleteOne({ _id: new ObjectId(params.id) });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error("[CORRECTION_DELETE]", error);
+    console.error("[DELETE]", error);
     return new NextResponse("Internal Error", { status: 500 });
   }
 }
