@@ -55,6 +55,7 @@ class Correction(BaseResponseModel):
 class Vocabulary(BaseResponseModel):
     type: ResponseType = ResponseType.VOCABULARY
     definition: str = Field(default="")
+    translated_vocabulary: str = Field(default="")
     examples: List[str] = Field(default_factory=list)
 
 class Breakdown(BaseResponseModel):

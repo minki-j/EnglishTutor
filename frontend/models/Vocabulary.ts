@@ -8,6 +8,7 @@ export interface IVocabulary {
   userId: string;
   input: string;
   definition: string;
+  translated_vocabulary: string;
   examples: string[];
   extraQuestions: IExtraQuestion[];
   createdAt: Date;
@@ -28,6 +29,10 @@ const VocabularySchema = new mongoose.Schema<IVocabulary>({
     required: true,
   },
   definition: {
+    type: String,
+    required: true,
+  },
+  translated_vocabulary: {
     type: String,
     required: true,
   },

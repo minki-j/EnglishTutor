@@ -183,6 +183,39 @@ Important!!
         "definition": definition,
     }
 
+def translate_to_mother_tongue(state: OverallState, writer: StreamWriter):
+    print("\n>>> NODE: translate_to_mother_tongue")
+
+    if not state.motherTongue:
+        return {}
+
+    translation = (
+        ChatPromptTemplate.from_template(
+            """
+Translate the following text into {mothertongue}:
+
+{input}
+
+---
+
+Don't add "translation: " or "here is the translation: ". Only return the translation.
+"""
+        )
+        | chat_model
+        | StrOutputParser()
+    ).invoke(
+        {
+            "input": state.vocabulary,
+            "mothertongue": state.motherTongue,
+        }
+    )
+
+    writer({"translated_vocabulary": translation})
+
+    return {
+        "translated_vocabulary": translation,
+    }
+
 
 def generate_example(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: generate_example")
@@ -206,6 +239,9 @@ Your answer:
 Student information:
 {aboutMe}
 
+Student's English level:
+{englishLevel}
+
 ---
 
 Important Rules!!
@@ -221,6 +257,7 @@ Important Rules!!
             "input": state.vocabulary,
             "definition": state.definition,
             "aboutMe": state.aboutMe,
+            "englishLevel": state.englishLevel or "Not specified",
         }
     )
 
@@ -238,12 +275,17 @@ g.add_edge(START, n(correct_input))
 g.add_node(n(correct_input), correct_input)
 g.add_edge(n(correct_input), n(get_definition))
 g.add_edge(n(correct_input), n(check_if_input_is_sentence))
+g.add_edge(n(correct_input), n(translate_to_mother_tongue))
+
 
 g.add_node(n(get_definition), get_definition)
 g.add_edge(n(get_definition), "rendevous")
 
 g.add_node(n(check_if_input_is_sentence), check_if_input_is_sentence)
 g.add_edge(n(check_if_input_is_sentence), "rendevous")
+
+g.add_node(n(translate_to_mother_tongue), translate_to_mother_tongue)
+g.add_edge(n(translate_to_mother_tongue), "rendevous")
 
 g.add_node("rendevous", RunnablePassthrough())
 g.add_edge("rendevous", n(generate_example))

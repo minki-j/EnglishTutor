@@ -23,6 +23,7 @@ Paraphrase the following text for ESL student to understand it better.
 - Use simpler vocabulary.
 - Change idiomatic expressions in a clear way.
 - Use more simple sentence structure.
+- The student's English level: {englishLevel}
 
 ---
 
@@ -37,6 +38,7 @@ Don't include "here is the paraphrased text: " or "Sure, let's paraphrase the te
     ).ainvoke(
         {
             "input": state.input,
+            "englishLevel": state.englishLevel,
         }
     )
 
@@ -130,12 +132,14 @@ Important!!
 - Use markdown format.
 - Don't explain too obvious things as the examples above demonstrate.
 - Try to explain idiomic phrases with its origin or the metaphor it represents.
+- The student's English level is {englishLevel}. Take this into account when generating the breakdown.  
 """
         )
         | chat_model
     ).ainvoke(
         {
             "input": state.input,
+            "englishLevel": state.englishLevel,
         }
     )
 

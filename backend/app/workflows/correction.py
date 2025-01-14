@@ -56,6 +56,7 @@ def generate_explanation(state: OverallState, writer: StreamWriter):
             """You are a experienced ESL tutor. Your student asked you to look at their Enlglish expression or writing and improve it.
 Here is their original: {input}
 Here it your corrected version: {correctedText}
+The user's Enlgish level is: {englishLevel}
 
 Now you have to give explanations for your corrections one by one.
 
@@ -93,6 +94,7 @@ Important!!
         {
             "input": state.input,
             "correctedText": state.correctedText,
+            "englishLevel": state.englishLevel,
             "corrections": (
                 "\n".join(
                     [

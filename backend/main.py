@@ -1,10 +1,12 @@
-from fastapi import FastAPI, HTTPException, WebSocket, Request
+from fastapi import FastAPI, HTTPException, WebSocket, Request, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.websockets import WebSocketDisconnect
 from contextlib import asynccontextmanager
 import inspect
 from bson import ObjectId
+from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Optional
 
 from app.workflows.correction import g as correction_graph
 from app.workflows.vocabulary import g as vocabulary_graph
@@ -32,8 +34,49 @@ async def lifespan(app: FastAPI):
     yield
 
 
+class UserMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Get user_id from request headers or query parameters
+        user_id = request.headers.get("user-id") or request.query_params.get("user_id")
+
+        if user_id:
+            # Fetch user info from database
+            user = await main_db.users.find_one({"googleId": user_id})
+            if user:
+                # Add user info to request state
+                request.state.user = {
+                    "id": user_id,
+                    "aboutMe": user.get("aboutMe", ""),
+                    "englishLevel": user.get("englishLevel", ""),
+                    "motherTongue": user.get("motherTongue", ""),
+                }
+            else:
+                request.state.user = None
+        else:
+            request.state.user = None
+
+        response = await call_next(request)
+        return response
+
+
+async def get_current_user(websocket: WebSocket) -> Optional[dict]:
+    # For WebSocket connections, we'll get the user_id from the query parameters
+    user_id = websocket.query_params.get("user_id")
+    if user_id:
+        user = await main_db.users.find_one({"googleId": user_id})
+        if user:
+            return {
+                "id": user_id,
+                "aboutMe": user.get("aboutMe", ""),
+                "englishLevel": user.get("englishLevel", ""),
+                "motherTongue": user.get("motherTongue", ""),
+            }
+    return None
+
+
 app = FastAPI(title="English Tutor API", lifespan=lifespan)
 
+app.add_middleware(UserMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,19 +103,25 @@ async def correction_ws(websocket: WebSocket):
     """
     try:
         await websocket.accept()
+        user = await get_current_user(websocket)
+        if not user:
+            await websocket.send_json(
+                {"error": "No user ID provided or user not found"}
+            )
+            return
+
         data = await websocket.receive_json()
 
         type = ResponseType.CORRECTION.value
         input = data.get("input")
-        user_id = data.get("user_id")
 
-        if not input or not user_id:
-            error_msg = "No text provided" if not input else "No user ID provided"
+        if not input:
+            error_msg = "No text provided"
             await websocket.send_json({"error": error_msg})
             return
 
         graph = correction_graph
-        result = Correction(userId=user_id, input=input)
+        result = Correction(userId=user["id"], input=input)
         workflow = await compile_graph_with_async_checkpointer(graph, type)
 
         result_id = result.id
@@ -82,6 +131,9 @@ async def correction_ws(websocket: WebSocket):
             {
                 "input": input,
                 "thread_id": result_id_str,
+                "aboutMe": user.get("aboutMe", ""),
+                "englishLevel": user.get("englishLevel", ""),
+                "motherTongue": user.get("motherTongue", ""),
             },
             stream_mode=["custom"],
             config={"configurable": {"thread_id": result_id_str}},
@@ -118,29 +170,29 @@ async def correction_ws(websocket: WebSocket):
 @app.websocket("/ws/vocabulary")
 async def vocabulary_ws(websocket: WebSocket):
     """
-    correct the provided input and provide explanations for corrections.
+    Process vocabulary for the provided input.
     """
     try:
         await websocket.accept()
+        user = await get_current_user(websocket)
+        if not user:
+            await websocket.send_json(
+                {"error": "No user ID provided or user not found"}
+            )
+            return
+
         data = await websocket.receive_json()
 
         type = ResponseType.VOCABULARY.value
         input = data.get("input")
-        user_id = data.get("user_id")
 
-        if not input or not user_id:
-            error_msg = "No text provided" if not input else "No user ID provided"
+        if not input:
+            error_msg = "No text provided"
             await websocket.send_json({"error": error_msg})
             return
 
         graph = vocabulary_graph
-        user = await main_db.users.find_one({"googleId": user_id})
-        aboutMe = user.get("aboutMe", "")
-        result = Vocabulary(
-            userId=user_id,
-            input=input,
-            aboutMe=aboutMe,
-        )
+        result = Vocabulary(userId=user["id"], input=input)
         workflow = await compile_graph_with_async_checkpointer(graph, type)
 
         result_id = result.id
@@ -150,7 +202,9 @@ async def vocabulary_ws(websocket: WebSocket):
             {
                 "input": input,
                 "thread_id": result_id_str,
-                "aboutMe": aboutMe,
+                "aboutMe": user.get("aboutMe", ""),
+                "englishLevel": user.get("englishLevel", ""),
+                "motherTongue": user.get("motherTongue", ""),
             },
             stream_mode=["custom"],
             config={"configurable": {"thread_id": result_id_str}},
@@ -173,9 +227,14 @@ async def vocabulary_ws(websocket: WebSocket):
                 result.definition = definition
                 response_data["definition"] = definition
 
+            if "translated_vocabulary" in data.keys():
+                translated_vocabulary = data["translated_vocabulary"]
+                result.translated_vocabulary = translated_vocabulary
+                response_data["translated_vocabulary"] = translated_vocabulary
+
             if "examples" in data.keys():
-                streaming_examples = data["examples"] # streaming the whole list
-                result.examples = streaming_examples # update with the lastest value
+                streaming_examples = data["examples"]  # streaming the whole list
+                result.examples = streaming_examples  # update with the lastest value
                 response_data["examples"] = streaming_examples
 
             await websocket.send_json(response_data)
@@ -196,23 +255,29 @@ async def vocabulary_ws(websocket: WebSocket):
 @app.websocket("/ws/breakdown")
 async def breakdown_ws(websocket: WebSocket):
     """
-    correct the provided input and provide explanations for corrections.
+    Process text breakdown for the provided input.
     """
     try:
         await websocket.accept()
+        user = await get_current_user(websocket)
+        if not user:
+            await websocket.send_json(
+                {"error": "No user ID provided or user not found"}
+            )
+            return
+
         data = await websocket.receive_json()
 
         type = ResponseType.BREAKDOWN.value
         input = data.get("input")
-        user_id = data.get("user_id")
 
-        if not input or not user_id:
-            error_msg = "No text provided" if not input else "No user ID provided"
+        if not input:
+            error_msg = "No text provided"
             await websocket.send_json({"error": error_msg})
             return
 
         graph = breakdown_graph
-        result = Breakdown(userId=user_id, input=input)
+        result = Breakdown(userId=user["id"], input=input)
         workflow = await compile_graph_with_async_checkpointer(graph, type)
 
         result_id = result.id
@@ -222,6 +287,9 @@ async def breakdown_ws(websocket: WebSocket):
             {
                 "input": input,
                 "thread_id": result_id_str,
+                "aboutMe": user.get("aboutMe", ""),
+                "englishLevel": user.get("englishLevel", ""),
+                "motherTongue": user.get("motherTongue", ""),
             },
             stream_mode=["messages"],
             config={"configurable": {"thread_id": result_id_str}},
@@ -269,32 +337,41 @@ async def breakdown_ws(websocket: WebSocket):
 @app.websocket("/ws/general")
 async def general_ws(websocket: WebSocket):
     """
-    answer general questions
+    Process general questions.
     """
     try:
         await websocket.accept()
+        user = await get_current_user(websocket)
+        if not user:
+            await websocket.send_json(
+                {"error": "No user ID provided or user not found"}
+            )
+            return
+
         data = await websocket.receive_json()
 
         type = ResponseType.GENERAL.value
         input = data.get("input")
-        user_id = data.get("user_id")
 
-        if not input or not user_id:
-            error_msg = "No text provided" if not input else "No user ID provided"
+        if not input:
+            error_msg = "No text provided"
             await websocket.send_json({"error": error_msg})
             return
 
         streaming = (
             ChatPromptTemplate.from_messages(
                 [
-                    ("system", "You are a helpful assistant in AI English Tutor app which helps users to learn English. Most of the users in this platform are not native Enlgish speaker. When you answer to the users, you should explain with easy vocabulary and grammar. Giving an example or explain the history of the word or phrase would be a good practice. Try to make your response concise so that the user can read it quickly. You can use Markdown format in your response."),
+                    (
+                        "system",
+                        "You are a helpful assistant in AI English Tutor app which helps users to learn English. Most of the users in this platform are not native Enlgish speaker. When you answer to the users, you should explain with easy vocabulary and grammar. Giving an example or explain the history of the word or phrase would be a good practice. Try to make your response concise so that the user can read it quickly. You can use Markdown format in your response.",
+                    ),
                     ("human", "{input}"),
                 ]
             )
             | chat_model
         ).astream({"input": input})
 
-        result = General(userId=user_id, input=input)
+        result = General(userId=user["id"], input=input)
         result_id = result.id
         result_id_str = str(result_id)
 

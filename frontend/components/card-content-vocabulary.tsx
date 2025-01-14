@@ -9,21 +9,17 @@ interface Props {
 export function CardContentVocabulary({ entry, copyToClipboard }: Props) {
   return (
     <div className="space-y-4 flex-[0.9]">
+      <CardSection title="Vocabulary" content={entry.input} />
+      <CardSection title="Definition" content={entry.definition ?? ""} />
       <CardSection
-        title="Vocabulary"
-        content={entry.input}
+        title="Translation"
+        content={entry.translated_vocabulary ?? ""}
       />
       <CardSection
-        title="Definition"
-        content={entry.definition ?? ""}
+        title="Examples"
+        content={entry.examples}
+        variant="stringList"
       />
-      {entry.examples?.length > 0 && (
-        <CardSection
-          title="Examples"
-          content={entry.examples}
-          variant="stringList"
-        />
-      )}
       {entry.extraQuestions?.length > 0 && (
         <CardSection
           title="Extra Questions"

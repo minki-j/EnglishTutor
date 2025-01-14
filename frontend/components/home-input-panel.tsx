@@ -76,6 +76,7 @@ export const HomeInputPanel = ({
       const wsProtocol = backendUrlObj.protocol === "https:" ? "wss:" : "ws:";
       const wsUrl = new URL(`ws/${type}`, backendUrlObj.href);
       wsUrl.protocol = wsProtocol;
+      wsUrl.searchParams.set("user_id", session?.user?.id || "");
 
       websocket = new WebSocket(wsUrl.toString());
 
@@ -107,7 +108,7 @@ export const HomeInputPanel = ({
   ) => {
     websocket.onmessage = async (event) => {
       const response = JSON.parse(event.data);
-      // console.log(response);
+      // console.log("WebSocket response: ", response);
       
       if (response.error) {
         // remove default entry when there is an error
@@ -144,7 +145,7 @@ export const HomeInputPanel = ({
         const clipboardText = await navigator.clipboard.readText();
         input_text = clipboardText;
       } catch (clipboardError) {
-        console.log("Clipboard access not available:", clipboardError);
+        console.error("Clipboard access not available:", clipboardError);
       }
       if (
         input_text.includes(`”
@@ -263,7 +264,6 @@ Excerpt From`
     let updates = { ...existingEntry };
     for (const [key, value] of Object.entries(response)) {
       if (key === "examples") {
-        console.log("examples", response.examples);
         updates = {
           ...updates,
           examples: response.examples,

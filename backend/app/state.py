@@ -22,6 +22,7 @@ class OutputState(BaseModel):
     correctedText: Annotated[str, update_str] = Field(default="")
     corrections: Annotated[list, extend_list] = Field(default_factory=list)
     vocabulary: Annotated[str, update_str] = Field(default="")
+    translated_vocabulary: Annotated[str, update_str] = Field(default="")
     definition: Annotated[str, update_str] = Field(default="")
     examples: Annotated[list, extend_list] = Field(default_factory=list)
     breakdown_stream_msg: Annotated[list, add_messages] = Field(default_factory=list)
@@ -32,6 +33,8 @@ class InputState(BaseModel):
     thread_id: str
     input: str
     aboutMe: str = Field(default="")
+    englishLevel: str = Field(default="")
+    motherTongue: str = Field(default="")
 
 
 class OverallState(InputState, OutputState):

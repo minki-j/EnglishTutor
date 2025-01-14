@@ -63,7 +63,8 @@ export default async function HistoryPage({
           return {
             ...baseFields,
             definition: doc.definition!,
-            examples: doc.examples!
+            examples: doc.examples!,
+            translated_vocabulary: doc.translated_vocabulary!
           } as IVocabulary;
         case EntryType.CORRECTION:
           return {

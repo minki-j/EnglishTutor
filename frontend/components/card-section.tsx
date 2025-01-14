@@ -164,7 +164,7 @@ export function CardSection({ title, content, variant = "string" }: Props) {
   };
 
   const renderContent = () => {
-    if (!content) return <Spinner />;
+    if (!content || content.length === 0) return <Spinner />;
 
     switch (variant) {
       case "string":
