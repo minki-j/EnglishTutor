@@ -173,10 +173,10 @@ async def vocabulary_ws(websocket: WebSocket):
                 result.definition = definition
                 response_data["definition"] = definition
 
-            if "example" in data.keys():
-                example = data["example"]
-                result.examples.append(example)
-                response_data["example"] = example
+            if "examples" in data.keys():
+                streaming_examples = data["examples"] # streaming the whole list
+                result.examples = streaming_examples # update with the lastest value
+                response_data["examples"] = streaming_examples
 
             await websocket.send_json(response_data)
 

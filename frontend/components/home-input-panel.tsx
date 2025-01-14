@@ -262,10 +262,11 @@ Excerpt From`
 
     let updates = { ...existingEntry };
     for (const [key, value] of Object.entries(response)) {
-      if (key === "example") {
+      if (key === "examples") {
+        console.log("examples", response.examples);
         updates = {
           ...updates,
-          examples: [...(updates.examples || []), response.example],
+          examples: response.examples,
         };
       } else {
         updates = {

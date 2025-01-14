@@ -14,6 +14,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 from app.state import OverallState, InputState, OutputState
 from app.llm import chat_model
 
+
 def check_if_input_is_sentence(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: check_if_input_is_sentence")
 
@@ -22,7 +23,8 @@ def check_if_input_is_sentence(state: OverallState, writer: StreamWriter):
 
     response = (
         ChatPromptTemplate.from_template(
-            """Check if the following text is a sentence. Return "True" if it is a sentence. Otherwise, return "False".
+            """
+Check if the following text is a sentence. Return "True" if it is a sentence. Otherwise, return "False".
 
 ---
 
@@ -55,18 +57,16 @@ input: {input}
         }
     )
 
-    if response.is_sentence:
+    if response.is_sentence and "**" in state.vocabulary:
         writer(
             {
                 "example": state.vocabulary,
-                "extracted_word": (
-                    state.vocabulary.split("**")[1]
-                    if "**" in state.vocabulary and len(state.vocabulary.split("**")) > 1
-                    else state.vocabulary  # fallback to the full string if not properly formatted
-                ),
+                "extracted_word": (state.vocabulary.split("**")[1]),
             }
         )
-        return {"examples": [state.vocabulary]} #! This gets duplicated when rendevous node is reached
+        return {
+            "examples": [state.vocabulary]
+        }  #! This gets duplicated when rendevous node is reached
     else:
         return {}
 
@@ -76,7 +76,8 @@ def correct_input(state: OverallState, writer: StreamWriter):
 
     corrected_input = (
         ChatPromptTemplate.from_template(
-            """Correct spelling, punctuation, capitalization, and grammar errors. 
+            """
+Correct spelling, punctuation, capitalization, and grammar errors. 
 
 Here are some examples:
 
@@ -125,7 +126,9 @@ Important Rules!!
     writer({"corrected_input": corrected_input})
 
     if corrected_input == "":
-        raise ValueError("Failed to correct input: received empty string from correction node")
+        raise ValueError(
+            "Failed to correct input: received empty string from correction node"
+        )
 
     return {
         "vocabulary": corrected_input,
@@ -184,46 +187,49 @@ Important!!
 def generate_example(state: OverallState, writer: StreamWriter):
     print("\n>>> NODE: generate_example")
 
-    response = (
-        ChatPromptTemplate.from_template(
-            """You are a experienced ESL tutor. Your student asked the meaning of the following word or phrase. (If the question is a full sentence, then the bolded part of the sentence is the word or phrase that the student asked the meaning of.)
-Student Question: {input}
+    class ExampleSentenceResponse(BaseModel):
+        examples: list[str] = Field(
+            description="A list of three example sentences with the word or phrase that the student asked the meaning of. It should be related to the student's information so that the student can use it in their daily conversations."
+        )
 
-You answered back to the student with the following explanation: 
+    stream_generator = (
+        ChatPromptTemplate.from_template(
+            """
+You are a experienced ESL tutor. Your student asked the meaning of the following word or phrase. (If the question is a full sentence, then the bolded part of the sentence is the word or phrase that the student asked the meaning of.) Your task is to generate example sentences that the student may use in their daily conversations. The information of the student will be provided to you.
+
+Student's question:
+{input}
+
+Your answer:
 {definition}
 
-Now you have to give an example sentence.
-
-Here are the example sentences that you have already given: 
-{examples} 
-
-Create a new example sentence that doesn't overlap with the example sentences that you have already given.
-
-Make sure the example sentence is related to the word or phrase or bolded part of a sentence.
-
-Also try to generate an example setence that is realted to the student. Here is the student's information: 
+Student information:
 {aboutMe}
 
-Don't generate "output: " or "here is the example sentence: ". Only return the example sentence.
-            """
+---
+
+Important Rules!!
+
+- Create example sentences that doesn't overlap with the example sentences that you have already given.
+- You can create with a different tense such as past, present, future, past perfect, -ing, etc.
+- Make sure the example sentence is related to the word or phrase or bolded part of a sentence.
+"""
         )
-        | chat_model
-        | StrOutputParser()
-    ).invoke(
+        | chat_model.with_structured_output(ExampleSentenceResponse)
+    ).stream(
         {
             "input": state.vocabulary,
             "definition": state.definition,
-            "examples": "\n".join(state.examples),
             "aboutMe": state.aboutMe,
         }
     )
 
-    writer({"example": response})
+    examples = None
+    for chunk in stream_generator:
+        examples = chunk.examples
+        writer({"examples": examples})
 
-    return Command(
-        goto=n(generate_example) if len(state.examples) <= 1 else "__end__",  # stop after 2 examples
-        update={"examples": [response]},
-    )
+    return {"examples": examples}
 
 
 g = StateGraph(OverallState, input=InputState, output=OutputState)
@@ -243,3 +249,4 @@ g.add_node("rendevous", RunnablePassthrough())
 g.add_edge("rendevous", n(generate_example))
 
 g.add_node(n(generate_example), generate_example)
+g.add_edge(n(generate_example), END)
