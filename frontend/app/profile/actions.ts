@@ -7,14 +7,12 @@ import { revalidatePath } from "next/cache";
 
 export async function updateProfile(formData: FormData) {
   const session = await getServerSession(authOptions);
-  
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }
 
-  const name = formData.get('name') as string;
-  const email = formData.get('email') as string;
-  const aboutMe = formData.get('aboutMe') as string;
+  // Convert FormData to a plain object
+  const formDataObject = Object.fromEntries(formData.entries());
 
   const db = client.db("test");
   const collection = db.collection('users');
@@ -23,9 +21,7 @@ export async function updateProfile(formData: FormData) {
     { googleId: session.user.id },
     {
       $set: {
-        name,
-        email,
-        aboutMe,
+        ...formDataObject,
         updatedAt: new Date()
       }
     }

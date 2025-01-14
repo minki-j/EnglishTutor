@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/mongodb";
 import { ProfileForm } from "./profile-form";
+import { User } from "@/models/User";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -12,7 +13,7 @@ export default async function ProfilePage() {
   }
 
   const db = client.db("test");
-  const collection = db.collection('users');
+  const collection = db.collection("users");
 
   const user_mongodb = await collection.findOne({ googleId: session.user?.id });
 
@@ -24,11 +25,11 @@ export default async function ProfilePage() {
     );
   }
 
-  const user = { id: user_mongodb._id.toString(), name: user_mongodb.name, email: user_mongodb.email, aboutMe: user_mongodb.aboutMe };
-
-  if (user === null) {
-    throw new Error("User document is null");
-  }
+  const { _id, ...userData } = user_mongodb;
+  const user = {
+    id: _id.toString(),
+    ...userData
+  } as User;
 
   return (
     <div className="container mx-auto py-8 max-w-2xl">

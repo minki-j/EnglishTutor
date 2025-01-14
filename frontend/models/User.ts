@@ -1,6 +1,19 @@
 import mongoose from "mongoose";
 
-const UserSchema = new mongoose.Schema({
+export interface User {
+  id: string;
+  googleId: string;
+  name: string;
+  email: string;
+  image?: string;
+  motherTongue?: string;
+  englishLevel?: string;
+  aboutMe?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const UserSchema = new mongoose.Schema<User>({
   googleId: {
     type: String,
     required: true,
@@ -16,6 +29,12 @@ const UserSchema = new mongoose.Schema({
     unique: true,
   },
   image: {
+    type: String,
+  },
+  motherTongue: {
+    type: String,
+  },
+  englishLevel: {
     type: String,
   },
   aboutMe: {

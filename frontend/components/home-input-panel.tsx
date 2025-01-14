@@ -380,8 +380,12 @@ Excerpt From`
     <Card className="p-6">
       <Textarea
         value={currentText}
-        onChange={(e) => setCurrentText(e.target.value)}
-        className="mb-4 min-h-[100px] text-lg"
+        onChange={(e) => {
+          setCurrentText(e.target.value);
+          e.target.style.height = 'auto';
+          e.target.style.height = `${e.target.scrollHeight}px`;
+        }}
+        className="mb-4 min-h-[100px] text-lg overflow-hidden resize-none"
         placeholder={placeholder}
         onKeyDown={handleKeyDown}
         autoFocus={true}
