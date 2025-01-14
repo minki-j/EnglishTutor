@@ -3,9 +3,9 @@
 import { Copy } from "lucide-react";
 import { ICorrectionItem } from "@/models/Correction";
 import { IExtraQuestion } from "@/models/ExtraQuestions";
-import ReactMarkdown from "react-markdown";
 import { Spinner } from "./ui/spinner";
 import { useToast } from "@/components/ui/use-toast";
+import ReactMarkdown from "react-markdown";
 
 interface Props {
   title: string;
@@ -39,8 +39,10 @@ const CorrectionListContent = ({
         onClick={() => onCopy?.(item.correction + "\n" + item.explanation)}
         className="group relative cursor-pointer hover:bg-muted/50 pr-8"
       >
-        <p className="font-medium">{item.correction}</p>
-        <p className="text-sm text-muted-foreground mt-1">{item.explanation}</p>
+        <ReactMarkdown className="font-medium">{item.correction}</ReactMarkdown>
+        <ReactMarkdown className="text-sm text-muted-foreground mt-1">
+          {item.explanation}
+        </ReactMarkdown>
         <div className="absolute right-0 top-0">
           <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
@@ -57,16 +59,20 @@ const ExtraQuestionListContent = ({
   onCopy?: (text: string) => void;
 }) => {
   return (
-    <ul className="pl-4 space-y-1">
+    <ul className="pl-4 space-y-1 list-disc">
       {content.map((item, index) => (
         <li
           key={index}
-          className="group relative cursor-pointer hover:bg-muted/50"
+          className="group relative cursor-pointer hover:bg-muted/50 "
           onClick={() => onCopy?.("Q. " + item.question + "\n" + item.answer)}
         >
           <div className="pr-8">
-            <p className="font-medium">Q. {item.question}</p>
-            <p className="text-sm text-muted-foreground mt-1">{item.answer}</p>
+            <ReactMarkdown className="font-medium">
+              {item.question}
+            </ReactMarkdown>
+            <ReactMarkdown className="text-sm text-muted-foreground mt-1">
+              {item.answer}
+            </ReactMarkdown>
           </div>
           <div className="absolute right-0 top-0">
             <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -92,7 +98,7 @@ const StringListContent = ({
         onClick={() => onCopy?.(item)}
       >
         <div className="pr-8">
-          <p className="">{item}</p>
+          <ReactMarkdown>{item}</ReactMarkdown>
         </div>
         <div className="absolute right-0 top-0">
           <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -108,29 +114,31 @@ const StringContent = ({
 }: {
   content: string;
   onCopy?: (text: string) => void;
-}) => (
-  <div
-    className="relative group text-foreground/90 pr-8 cursor-pointer hover:bg-muted/50"
-    onClick={() => onCopy?.(content)}
-  >
-    <ReactMarkdown
-      components={{
-        p: ({ node, ...props }) => <p className="" {...props} />,
-        ul: ({ node, ...props }) => (
-          <ul className="stringList-disc pl-4 space-y-1" {...props} />
-        ),
-        li: ({ node, ...props }) => (
-          <li className="group relative" {...props} />
-        ),
-      }}
+}) => {
+  return (
+    <div
+      className="relative group text-foreground/90 pr-8 cursor-pointer hover:bg-muted/50"
+      onClick={() => onCopy?.(content)}
     >
-      {content}
-    </ReactMarkdown>
-    <div className="absolute right-0 top-0">
-      <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+      <ReactMarkdown
+        components={{
+          p: ({ node, children }) => <p className="my-2">{children}</p>,
+          ul: ({ node, children }) => (
+            <ul className="list-disc pl-4 space-y-1">{children}</ul>
+          ),
+          ol: ({ node, children }) => (
+            <ol className="list-decimal pl-4 space-y-1">{children}</ol>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+      <div className="absolute right-0 top-0">
+        <Copy className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export function CardSection({ title, content, variant = "string" }: Props) {
   const { toast } = useToast();

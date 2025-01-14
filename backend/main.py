@@ -62,7 +62,7 @@ async def correction_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = ResponseType.CORRECTION
+        type = ResponseType.CORRECTION.value
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -124,7 +124,7 @@ async def vocabulary_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = ResponseType.VOCABULARY
+        type = ResponseType.VOCABULARY.value
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -141,8 +141,7 @@ async def vocabulary_ws(websocket: WebSocket):
             input=input,
             aboutMe=aboutMe,
         )
-        print("compile graph for ", type.value)
-        workflow = await compile_graph_with_async_checkpointer(graph, type.value)
+        workflow = await compile_graph_with_async_checkpointer(graph, type)
 
         result_id = result.id
         result_id_str = str(result_id)
@@ -160,10 +159,14 @@ async def vocabulary_ws(websocket: WebSocket):
                 "id": result_id_str,
                 "type": type,
             }
-            if "vocabulary" in data.keys():
-                correctedInput = data["vocabulary"]
-                result.input = correctedInput
-                response_data["input"] = correctedInput
+            if "extracted_word" in data.keys():
+                extracted_word = data["extracted_word"]
+                result.input = extracted_word
+                response_data["input"] = extracted_word
+            elif "corrected_input" in data.keys():
+                corrected_input = data["corrected_input"]
+                result.input = corrected_input
+                response_data["input"] = corrected_input
 
             if "definition" in data.keys():
                 definition = data["definition"]
@@ -199,7 +202,7 @@ async def breakdown_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = ResponseType.BREAKDOWN
+        type = ResponseType.BREAKDOWN.value
         input = data.get("input")
         user_id = data.get("user_id")
 
@@ -272,7 +275,7 @@ async def general_ws(websocket: WebSocket):
         await websocket.accept()
         data = await websocket.receive_json()
 
-        type = ResponseType.GENERAL
+        type = ResponseType.GENERAL.value
         input = data.get("input")
         user_id = data.get("user_id")
 

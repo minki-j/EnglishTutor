@@ -45,12 +45,12 @@ export const HomeInputPanel = ({
   const [placeholder, setPlaceholder] = useState<string>("");
   const { toast } = useToast();
 
-  const set_default_entry = (type: EntryType) => {
+  const set_default_entry = (input_text: string, type: EntryType) => {
     setEntries((prev: Entry[]) => {
       return [
         {
           id: "default_entry_id",
-          input: currentText,
+          input: input_text,
           createdAt: new Date(),
           type: type,
         } as Entry,
@@ -107,7 +107,7 @@ export const HomeInputPanel = ({
   ) => {
     websocket.onmessage = async (event) => {
       const response = JSON.parse(event.data);
-
+      console.log(response);
       if (response.error) {
         // remove default entry when there is an error
         setEntries((prev: Entry[]) => {
@@ -135,14 +135,39 @@ export const HomeInputPanel = ({
     type: EntryType,
     entryUpdateLogic: (prev: Entry[], response: any) => Entry[]
   ) => {
+    let input_text = currentText;
+    console.log("input_text", input_text);
+    
     if (!currentText.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter some text to analyze",
-        variant: "destructive",
-        duration: 4000,
-      });
-      return;
+      // When input is empty, try to read from clipboard
+      try {
+        const clipboardText = await navigator.clipboard.readText();
+        input_text = clipboardText;
+      } catch (clipboardError) {
+        console.log("Clipboard access not available:", clipboardError);
+      }
+      if (
+        input_text.includes(`”
+
+Excerpt From`)
+      ) {
+        input_text = input_text
+          .split(
+            `”
+
+Excerpt From`
+          )[0]
+          .slice(1);
+        console.log("input_text", input_text);
+      } else {
+        toast({
+          title: "Error",
+          description: "Please enter some text to analyze",
+          variant: "destructive",
+          duration: 4000,
+        });
+        return;
+      }
     }
 
     const websocket = connectWebSocket(type);
@@ -151,7 +176,7 @@ export const HomeInputPanel = ({
     }
 
     try {
-      set_default_entry(type);
+      set_default_entry(input_text,type);
       setCurrentText("");
       await Promise.race([
         new Promise((resolve, reject) => {
@@ -172,7 +197,7 @@ export const HomeInputPanel = ({
 
       websocket.send(
         JSON.stringify({
-          input: currentText,
+          input: input_text,
           user_id: session?.user?.id || "temporary_user",
         })
       );

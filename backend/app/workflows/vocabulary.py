@@ -51,13 +51,18 @@ input: {input}
         | chat_model.with_structured_output(IsSentenceResponse)
     ).invoke(
         {
-            "input": state.input,
+            "input": state.vocabulary,
         }
     )
 
     if response.is_sentence:
-        writer({"example": state.input})
-        return {"examples": [state.input]}
+        writer(
+            {
+                "example": state.vocabulary,
+                "extracted_word": state.vocabulary.split("**")[1],
+            }
+        )
+        return {"examples": [state.vocabulary]} #! This gets duplicated when rendevous node is reached
     else:
         return {}
 
@@ -67,18 +72,28 @@ def correct_input(state: OverallState, writer: StreamWriter):
 
     corrected_input = (
         ChatPromptTemplate.from_template(
-            """Correct spelling or grammar errors. Here are some examples:
+            """Correct spelling, punctuation, capitalization, and grammar errors. 
+
+Here are some examples:
 
 input: debiliteting
-output: Debilitate 
+output: debilitating
 
-input: **<u>at disposal</u>**
-output: At one's disposal
+input: at disposal
+output: at one's disposal
 
-input: **<u>convei</u>**
-output: Convey
+input: do we have that **in place**?
+output: Do we have that **in place**?
 
-input: 
+input: the term of endearment wass spoken more **wistfully** than with the cozy affeaction it once hold
+output: The term of endearment was spoken more **wistfully** than with the cozy affection it once holds.
+
+input: convei
+output: convey
+
+input: it's about **the whole gamut of** things that are required to buiild a home
+output: It's about **the whole gamut of** things that are required to build a home.
+
 ---
 
 Now it's your turn!
@@ -87,8 +102,14 @@ input: {input}
 
 ---
 
-Don't add "output: " or "certainly, here is the corrected input: ". Only return the corrected input.
-When there is no correction required, then return the original input. Don't add any explanation or preambles such as "This sentence is grammatically correct:" or "(No correction needed)".""")
+Important Rules!!
+
+- Don't add "output: " or "certainly, here is the corrected input: ". Only return the corrected input.
+- When there is no correction required, then return the original input. Don't add any explanation or preambles such as "This sentence is grammatically correct:" or "(No correction needed)".
+- Keep markdown bold styling(**bold text**).
+- Only capitalize the first letter of the word if the input is a sentence. For words and phrases, keep it lowercase.
+"""
+        )
         | chat_model
         | StrOutputParser()
     ).invoke(
@@ -97,11 +118,10 @@ When there is no correction required, then return the original input. Don't add 
         }
     )
 
-    # Stream the output via StreamWriter
-    writer({"vocabulary": corrected_input})
+    writer({"corrected_input": corrected_input})
 
     if corrected_input == "":
-        raise Error("correct_input Node returned empty string")
+        raise ValueError("Failed to correct input: received empty string from correction node")
 
     return {
         "vocabulary": corrected_input,
@@ -119,7 +139,7 @@ You are an expert in English vocabulary. You are given a word or phrase or a sen
 ---
 
 input: Buoy
-definition: a floating object used to mark the position of a hazard in the water
+definition: A floating object used to mark the position of a hazard in the water
 
 input: What none of the volunteers knew until they arrived for the study was the method we would be using, one of the most powerful techniques scientists have **<u>at our disposal</u>** for stressing people out in the lab
 definition: In this context, "at our disposal" means "available for us to use." It suggests that the scientists have access to this powerful technique and can use it as a tool or resource for their experiments.
@@ -146,7 +166,7 @@ Important!!
         | StrOutputParser()
     ).invoke(
         {
-            "input": state.input,
+            "input": state.vocabulary,
         }
     )
 
@@ -187,7 +207,7 @@ Don't generate "output: " or "here is the example sentence: ". Only return the e
         | StrOutputParser()
     ).invoke(
         {
-            "input": state.input,
+            "input": state.vocabulary,
             "definition": state.definition,
             "examples": "\n".join(state.examples),
             "aboutMe": state.aboutMe,
@@ -204,10 +224,10 @@ Don't generate "output: " or "here is the example sentence: ". Only return the e
 
 g = StateGraph(OverallState, input=InputState, output=OutputState)
 g.add_edge(START, n(correct_input))
-g.add_edge(START, n(check_if_input_is_sentence))
 
 g.add_node(n(correct_input), correct_input)
 g.add_edge(n(correct_input), n(get_definition))
+g.add_edge(n(correct_input), n(check_if_input_is_sentence))
 
 g.add_node(n(get_definition), get_definition)
 g.add_edge(n(get_definition), "rendevous")
