@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   title: "EnglishTutor",
   description:
     "Improve your English writing skills with AI-powered corrections and quizzes",
-  themeColor: "#000000",
   icons: {
     icon: [
       { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -48,6 +47,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="theme-color" content="hsl(var(--background))" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           <ThemeProvider
