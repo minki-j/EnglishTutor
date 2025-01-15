@@ -37,7 +37,7 @@ const CorrectionListContent = ({
       <li
         key={index}
         onClick={() => onCopy?.(item.correction + "\n" + item.explanation)}
-        className="group relative cursor-pointer hover:bg-muted/50 pr-8"
+        className="group relative cursor-pointer hover:bg-muted/50 sm:pr-8"
       >
         <ReactMarkdown className="font-medium">{item.correction}</ReactMarkdown>
         <ReactMarkdown className="text-sm text-muted-foreground mt-1">
@@ -66,7 +66,7 @@ const ExtraQuestionListContent = ({
           className="group relative cursor-pointer hover:bg-muted/50 "
           onClick={() => onCopy?.("Q. " + item.question + "\n" + item.answer)}
         >
-          <div className="pr-8">
+          <div className="sm:pr-8">
             <ReactMarkdown className="font-medium">
               {item.question}
             </ReactMarkdown>
@@ -97,7 +97,7 @@ const StringListContent = ({
         className="group relative cursor-pointer hover:bg-muted/50"
         onClick={() => onCopy?.(item)}
       >
-        <div className="pr-8">
+        <div className="sm:pr-8">
           <ReactMarkdown>{item}</ReactMarkdown>
         </div>
         <div className="absolute right-0 top-0">
@@ -117,7 +117,7 @@ const StringContent = ({
 }) => {
   return (
     <div
-      className="relative group text-foreground/90 pr-8 cursor-pointer hover:bg-muted/50"
+      className="relative group text-foreground/90 sm:pr-8 cursor-pointer hover:bg-muted/50"
       onClick={() => onCopy?.(content)}
     >
       <ReactMarkdown
