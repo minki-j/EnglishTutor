@@ -394,20 +394,20 @@ export const HomeInputPanel = ({
           onChange={(e) => {
             setCurrentText(e.target.value);
           }}
-          className="mb-4 min-h-[100px] text-lg overflow-hidden resize-none"
+          className="mb-4 min-h-[150px] text-lg overflow-hidden resize-none"
           placeholder={placeholder}
           onKeyDown={handleKeyDown}
           autoFocus={true}
         />
         {!currentText && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="absolute right-2 bottom-2 sm:hidden"
+            className="absolute right-2 bottom-2 sm:hidden opacity-50"
             onClick={async () => {
               try {
                 let text = await navigator.clipboard.readText();
-                
+
                 // This logic is for Apple Books app users.
                 // When they copy text from the app, it has this format:
                 // This logic will extract the text and remove the `formatting`.
