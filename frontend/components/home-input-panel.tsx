@@ -45,6 +45,7 @@ export const HomeInputPanel = ({
   const [currentText, setCurrentText] = useState("");
   const [placeholder, setPlaceholder] = useState<string>("");
   const { toast } = useToast();
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const set_default_entry = (input_text: string, type: EntryType) => {
     setEntries((prev: Entry[]) => {
@@ -329,6 +330,17 @@ export const HomeInputPanel = ({
     return updatedEntries;
   };
 
+  const adjustTextAreaHeight = (textArea: HTMLTextAreaElement) => {
+    textArea.style.height = 'auto';
+    textArea.style.height = `${textArea.scrollHeight}px`;
+  };
+
+  useEffect(() => {
+    if (textAreaRef.current && currentText) {
+      adjustTextAreaHeight(textAreaRef.current);
+    }
+  }, [currentText]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter") {
       if (e.metaKey || e.ctrlKey) {
@@ -377,11 +389,10 @@ export const HomeInputPanel = ({
     <Card className="p-6">
       <div className="relative">
         <Textarea
+          ref={textAreaRef}
           value={currentText}
           onChange={(e) => {
             setCurrentText(e.target.value);
-            e.target.style.height = 'auto';
-            e.target.style.height = `${e.target.scrollHeight}px`;
           }}
           className="mb-4 min-h-[100px] text-lg overflow-hidden resize-none"
           placeholder={placeholder}
