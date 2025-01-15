@@ -205,7 +205,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
     <Card
       className={`p-6 relative ${getBackgroundColor()}`}
     >
-      <div className="flex justify-between items-stretch">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:gap-0 justify-between items-stretch">
         <div className="flex-[0.95] flex flex-col space-y-6 ">
           {cardContent(entry)}
           <form
@@ -236,7 +236,7 @@ export function ResultCard({ entry, onDelete, setEntries }: Props) {
             </Button>
           </form>
         </div>
-        <div className="flex-[0.05] flex flex-col justify-between items-end">
+        <div className="flex-[0.05] flex justify-end gap-3 sm:flex-col sm:justify-between items-end">
           <span className="text-xs text-muted-foreground text-right whitespace-nowrap overflow-x-auto">
             {entry.createdAt
               ? entry.createdAt.toLocaleDateString("en-US", {

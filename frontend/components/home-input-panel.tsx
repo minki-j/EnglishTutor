@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { ClipboardPasteIcon } from "@/components/icons/clipboard-paste-icon";
 
 import { ICorrection } from "@/models/Correction";
 import { IVocabulary } from "@/models/Vocabulary";
@@ -147,19 +148,8 @@ export const HomeInputPanel = ({
       } catch (clipboardError) {
         console.error("Clipboard access not available:", clipboardError);
       }
-      if (
-        input_text.includes(`”
-
-Excerpt From`)
-      ) {
-        input_text = input_text
-          .split(
-            `”
-
-Excerpt From`
-          )[0]
-          .slice(1);
-      } else {
+      
+      if (!input_text) {
         toast({
           title: "Error",
           description: "Please enter some text to analyze",
@@ -167,6 +157,13 @@ Excerpt From`
           duration: 4000,
         });
         return;
+      }
+
+      // This logic is for Apple Books app users. 
+      // When they copy text from the app, it has this format:
+      // This logic will extract the text and remove the `formatting`.
+      if (input_text.includes(`”\n\nExcerpt From`)) {
+        input_text = input_text.split(`”\n\nExcerpt From`)[0].slice(1);
       }
     }
 
@@ -378,18 +375,45 @@ Excerpt From`
 
   return (
     <Card className="p-6">
-      <Textarea
-        value={currentText}
-        onChange={(e) => {
-          setCurrentText(e.target.value);
-          e.target.style.height = 'auto';
-          e.target.style.height = `${e.target.scrollHeight}px`;
-        }}
-        className="mb-4 min-h-[100px] text-lg overflow-hidden resize-none"
-        placeholder={placeholder}
-        onKeyDown={handleKeyDown}
-        autoFocus={true}
-      />
+      <div className="relative">
+        <Textarea
+          value={currentText}
+          onChange={(e) => {
+            setCurrentText(e.target.value);
+            e.target.style.height = 'auto';
+            e.target.style.height = `${e.target.scrollHeight}px`;
+          }}
+          className="mb-4 min-h-[100px] text-lg overflow-hidden resize-none"
+          placeholder={placeholder}
+          onKeyDown={handleKeyDown}
+          autoFocus={true}
+        />
+        {!currentText && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute right-2 bottom-2 sm:hidden"
+            onClick={async () => {
+              try {
+                let text = await navigator.clipboard.readText();
+                
+                // This logic is for Apple Books app users.
+                // When they copy text from the app, it has this format:
+                // This logic will extract the text and remove the `formatting`.
+                if (text.includes(`”\n\nExcerpt From`)) {
+                  text = text.split(`”\n\nExcerpt From`)[0].slice(1);
+                }
+                setCurrentText(text);
+              } catch (error) {
+                console.error("Failed to read clipboard:", error);
+              }
+            }}
+          >
+            <ClipboardPasteIcon className="h-4 w-4 mr-2" />
+            Paste
+          </Button>
+        )}
+      </div>
       <div className="grid grid-cols-4 gap-4">
         <Button
           onClick={() =>
