@@ -403,7 +403,7 @@ export const HomeInputPanel = ({
           <Button
             variant="outline"
             size="sm"
-            className="absolute right-2 bottom-2 sm:hidden opacity-50"
+            className="absolute right-2 bottom-2 opacity-80"
             onClick={async () => {
               try {
                 let text = await navigator.clipboard.readText();
