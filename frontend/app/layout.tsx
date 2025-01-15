@@ -12,6 +12,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'EnglishTutor',
   description: 'Improve your English writing skills with AI-powered corrections and quizzes',
+  themeColor: 'hsl(var(--background))',
   icons: {
     icon: [
       { url: '/favicon/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
