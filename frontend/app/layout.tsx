@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Navigation } from '@/components/navigation';
 import { AuthProvider } from '@/components/auth-provider';
 import { Suspense } from 'react';
+import { ThemeColor } from '@/components/theme-color';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -48,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>  
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="hsl(0, 0%, 3.9%)" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
@@ -58,6 +59,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <ThemeColor />
             <Suspense
               fallback={
                 <div className="min-h-screen bg-background animate-pulse">

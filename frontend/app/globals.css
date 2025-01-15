@@ -105,8 +105,33 @@ body .w-md-editor-text-input {
   line-height: 27px !important;
 }
 
-/* Need to prevent hover styles on mobile */
+/* prevent hover styles on mobile */
 @media (hover: none) {
-  *:hover {
+  /* Background hover effects */
+  [class*="hover\:bg-"]:hover {
+    background-color: transparent !important;
+  }
+
+  /* Opacity hover effects */
+  [class*="hover\:opacity-"]:hover,
+  [class*="group-hover\:opacity-"]:hover,
+  .group:hover [class*="group-hover\:opacity-"] {
+    opacity: 0 !important;
+  }
+
+  /* Text color hover effects */
+  [class*="hover\:text-"]:hover {
+    color: inherit !important;
+  }
+
+  /* Underline hover effects */
+  [class*="hover\:underline"]:hover {
+    text-decoration: none !important;
+  }
+
+  /* Transition effects */
+  .transition-opacity,
+  .transition-colors {
+    transition: none !important;
   }
 }
