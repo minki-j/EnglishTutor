@@ -47,8 +47,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <meta name="theme-color" content="hsl(var(--background))" />
+      <head>  
+        <meta name="theme-color" content="#000000" />
       </head>
       <body className={inter.className}>
         <AuthProvider>
@@ -75,9 +75,7 @@ export default function RootLayout({
             >
               <div className="min-h-screen bg-background">
                 <Navigation />
-                <main className="container mx-auto px-4 py-8">
-                  {children}
-                </main>
+                <main className="container mx-auto px-4 py-8">{children}</main>
               </div>
             </Suspense>
             <Toaster />
