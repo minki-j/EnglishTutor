@@ -92,7 +92,7 @@ export default async function HistoryPage({
     const totalPages = Math.ceil(totalCount / limit);
 
     return (
-      <div className="max-w-2xl mx-auto py-8">
+      <div className="max-w-2xl mx-auto">
         <HistoryList initialEntries={formattedCorrections} />
         {totalPages > 1 && (
           <nav className="flex justify-center gap-2 mt-8" aria-label="Pagination">
