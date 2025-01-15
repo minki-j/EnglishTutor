@@ -81,6 +81,12 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  * {
+    @apply hover:!bg-transparent hover:!text-inherit hover:!border-transparent;
+  }
+}
+
 [data-color-mode*="dark"] {
   --md-bg-color: hsl(var(--background));
   --md-border-color: hsl(var(--border));
